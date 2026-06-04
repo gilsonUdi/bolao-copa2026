@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "apostas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "grupoId", "order": "ASCENDING" },
+        { "fieldPath": "usuarioId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "apostas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "grupoId", "order": "ASCENDING" },
+        { "fieldPath": "jogoId", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
