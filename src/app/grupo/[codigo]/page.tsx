@@ -53,11 +53,52 @@ export default function GrupoPage() {
   const [gerandoPix, setGerandoPix] = useState(false);
   const [erroPag, setErroPag] = useState('');
 
+  // Formulário de entrada para novos membros
+  const [nomeEntrada, setNomeEntrada] = useState('');
+  const [telefoneEntrada, setTelefoneEntrada] = useState('');
+  const [entrando, setEntrando] = useState(false);
+  const [erroEntrada, setErroEntrada] = useState('');
+  const [grupoPreview, setGrupoPreview] = useState<{nome:string; valorAposta:number} | null>(null);
+
   useEffect(() => {
     const u = localStorage.getItem('bolao_usuario');
-    if (!u) { router.push('/'); return; }
-    setUsuario(JSON.parse(u));
-  }, [router]);
+    if (u) {
+      setUsuario(JSON.parse(u));
+    } else {
+      // Busca só o preview do grupo para mostrar na tela de entrada
+      fetch(`/api/grupos?codigo=${codigo}`)
+        .then(r => r.json())
+        .then(d => { if (d.grupo) setGrupoPreview({ nome: d.grupo.nome, valorAposta: d.grupo.valorAposta }); })
+        .catch(() => {});
+    }
+  }, [codigo]);
+
+  async function entrarNoGrupo(e: React.FormEvent) {
+    e.preventDefault();
+    setErroEntrada('');
+    setEntrando(true);
+    try {
+      const res = await fetch(`/api/grupos?codigo=${codigo}`);
+      if (!res.ok) throw new Error('Grupo não encontrado');
+      const usuarioId = `user_${telefoneEntrada.replace(/\D/g, '')}`;
+      const data = await res.json();
+      const jaMembro = data.grupo?.membros?.find((m: {usuarioId: string}) => m.usuarioId === usuarioId);
+      if (!jaMembro) {
+        await fetch(`/api/grupos/${codigo}/membros`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuarioId, nome: nomeEntrada, telefone: telefoneEntrada }),
+        });
+      }
+      const novoUsuario = { id: usuarioId, nome: nomeEntrada, telefone: telefoneEntrada };
+      localStorage.setItem('bolao_usuario', JSON.stringify(novoUsuario));
+      setUsuario(novoUsuario);
+    } catch (err: unknown) {
+      setErroEntrada(err instanceof Error ? err.message : 'Erro ao entrar no grupo');
+    } finally {
+      setEntrando(false);
+    }
+  }
 
   const carregarDados = useCallback(async () => {
     if (!usuario) return;
@@ -169,6 +210,86 @@ export default function GrupoPage() {
     } finally {
       setGerandoPix(false);
     }
+  }
+
+  // Tela de entrada — aparece para quem ainda não se identificou
+  if (!usuario) {
+    return (
+      <div className="min-h-screen hero-gradient flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-sm animate-slide-up">
+          {/* Cabeçalho */}
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-3">⚽</div>
+            <h1 className="text-2xl font-black" style={{color:'#F4A81D'}}>Bolão Copa 2026</h1>
+            {grupoPreview ? (
+              <>
+                <p className="text-white font-bold text-lg mt-1">{grupoPreview.nome}</p>
+                <p className="text-white/50 text-sm mt-1">
+                  Entrada: <strong className="text-white">R$ {grupoPreview.valorAposta.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>
+                </p>
+              </>
+            ) : (
+              <p className="text-white/50 text-sm mt-1">Código: <span className="font-mono font-bold text-white">{codigo}</span></p>
+            )}
+          </div>
+
+          <form onSubmit={entrarNoGrupo} className="card-copa p-6 flex flex-col gap-4">
+            <h2 className="font-bold text-lg" style={{color:'#F4A81D'}}>Entrar no Bolão</h2>
+
+            <div>
+              <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Seu Nome *</label>
+              <input
+                className="input-copa"
+                placeholder="Como você quer ser chamado"
+                value={nomeEntrada}
+                onChange={e => setNomeEntrada(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Seu WhatsApp *</label>
+              <input
+                className="input-copa"
+                placeholder="(11) 99999-9999"
+                type="tel"
+                value={telefoneEntrada}
+                onChange={e => setTelefoneEntrada(e.target.value)}
+                required
+              />
+            </div>
+
+            {erroEntrada && (
+              <p className="text-red-400 text-sm bg-red-500/10 rounded-lg p-2 text-center">{erroEntrada}</p>
+            )}
+
+            <button type="submit" className="btn-copa" disabled={entrando || !nomeEntrada || !telefoneEntrada}>
+              {entrando ? '⏳ Entrando...' : '🏆 Entrar no Bolão'}
+            </button>
+          </form>
+
+          {/* Pontuação */}
+          <div className="card-copa p-4 mt-4">
+            <h3 className="font-bold text-sm mb-3" style={{color:'#F4A81D'}}>📊 Sistema de Pontuação</h3>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg p-3" style={{background:'rgba(244,168,29,0.1)'}}>
+                <div className="text-2xl font-black" style={{color:'#F4A81D'}}>10</div>
+                <div className="text-white/60 text-xs mt-1">Placar Exato</div>
+              </div>
+              <div className="rounded-lg p-3" style={{background:'rgba(0,154,68,0.1)'}}>
+                <div className="text-2xl font-black" style={{color:'#4ade80'}}>7</div>
+                <div className="text-white/60 text-xs mt-1">Vencedor + Placar</div>
+              </div>
+              <div className="rounded-lg p-3" style={{background:'rgba(255,255,255,0.05)'}}>
+                <div className="text-2xl font-black text-white">5</div>
+                <div className="text-white/60 text-xs mt-1">Só Vencedor</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (loading) {
