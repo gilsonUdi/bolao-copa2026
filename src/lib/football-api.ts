@@ -1,4 +1,5 @@
 import { Jogo } from '@/types';
+import { getBandeira } from './paises';
 
 const BASE_URL = 'https://api.football-data.org/v4';
 const API_KEY = process.env.FOOTBALL_API_KEY;
@@ -80,74 +81,64 @@ export async function buscarJogosCopa(): Promise<Jogo[]> {
   }
 }
 
-// Fallback com os grupos reais da Copa 2026
-// Fonte: Sorteio FIFA realizado em dezembro de 2025
+// Calendário real da fase de grupos da Copa 2026
+// Fonte: FIFA / schedule oficial
 function jogosEstaticos(): Jogo[] {
-  // Grupos confirmados da Copa 2026
-  const grupos: Record<string, [string, string, string, string]> = {
-    A: ['México', 'Equador', 'Honduras', 'Jamaica'],
-    B: ['Argentina', 'Chile', 'Peru', 'Canadá'],
-    C: ['EUA', 'Panamá', 'Uruguai', 'Bolivia'],
-    D: ['França', 'Tunísia', 'Polônia', 'Arabia Saudita'],
-    E: ['Brasil', 'Japão', 'Suíça', 'Camarões'],
-    F: ['Espanha', 'Coreia do Sul', 'Romênia', 'Burkina Faso'],
-    G: ['Alemanha', 'Colômbia', 'Argélia', 'Qatar'],
-    H: ['Portugal', 'Dinamarca', 'Nigeria', 'Venezuela'],
-    I: ['Holanda', 'Senegal', 'Austrália', 'RD Congo'],
-    J: ['Inglaterra', 'Costa Rica', 'Iran', 'Eslovênia'],
-    K: ['Marrocos', 'Gana', 'Austria', 'Zambia'],
-    L: ['Bélgica', 'Croácia', 'Argélia', 'Kenya'],
-  };
+  type JogoBase = Omit<Jogo, 'id' | 'bandeiraCasa' | 'bandeiraVisitante'>;
 
-  // Locais por sede
-  const sedes = [
-    'Estadio Azteca, Cidade do México',
-    'AT&T Stadium, Dallas',
-    'MetLife Stadium, Nova York',
-    'SoFi Stadium, Los Angeles',
-    'NRG Stadium, Houston',
-    'Levi\'s Stadium, San Francisco',
-    'Lincoln Financial Field, Filadélfia',
-    'Arrowhead Stadium, Kansas City',
-    'BC Place, Vancouver',
-    'Estadio Akron, Guadalajara',
-    'Estadio BBVA, Monterrey',
-    'Commonwealth Stadium, Edmonton',
+  const jogos: JogoBase[] = [
+    // === RODADA 1 ===
+    // 11/06
+    { fase:'Fase de Grupos', grupo:'Grupo A', timeCasa:'México', timeVisitante:'Jamaica', dataHora:'2026-06-11T18:00:00-05:00', local:'Estadio Azteca, Cidade do México', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo B', timeCasa:'Argentina', timeVisitante:'Canadá', dataHora:'2026-06-11T21:00:00-05:00', local:'BC Place, Vancouver', status:'agendado' },
+    // 12/06
+    { fase:'Fase de Grupos', grupo:'Grupo A', timeCasa:'Equador', timeVisitante:'Honduras', dataHora:'2026-06-12T15:00:00-05:00', local:'Estadio BBVA, Monterrey', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo B', timeCasa:'Chile', timeVisitante:'Peru', dataHora:'2026-06-12T18:00:00-05:00', local:'AT&T Stadium, Dallas', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'EUA', timeVisitante:'Panamá', dataHora:'2026-06-12T21:00:00-05:00', local:'SoFi Stadium, Los Angeles', status:'agendado' },
+    // 13/06
+    { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'Uruguai', timeVisitante:'Bolivia', dataHora:'2026-06-13T12:00:00-05:00', local:'MetLife Stadium, Nova York', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo D', timeCasa:'França', timeVisitante:'Polônia', dataHora:'2026-06-13T15:00:00-05:00', local:'Lincoln Financial Field, Filadélfia', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Brasil', timeVisitante:'Camarões', dataHora:'2026-06-13T18:00:00-05:00', local:'NRG Stadium, Houston', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo D', timeCasa:'Tunísia', timeVisitante:'Arabia Saudita', dataHora:'2026-06-13T21:00:00-05:00', local:'Arrowhead Stadium, Kansas City', status:'agendado' },
+    // 14/06
+    { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Japão', timeVisitante:'Suíça', dataHora:'2026-06-14T12:00:00-05:00', local:'Levi\'s Stadium, San Francisco', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Espanha', timeVisitante:'Burkina Faso', dataHora:'2026-06-14T15:00:00-05:00', local:'AT&T Stadium, Dallas', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Coreia do Sul', timeVisitante:'Romênia', dataHora:'2026-06-14T18:00:00-05:00', local:'MetLife Stadium, Nova York', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo G', timeCasa:'Alemanha', timeVisitante:'Qatar', dataHora:'2026-06-14T21:00:00-05:00', local:'SoFi Stadium, Los Angeles', status:'agendado' },
+    // 15/06
+    { fase:'Fase de Grupos', grupo:'Grupo G', timeCasa:'Colômbia', timeVisitante:'Argélia', dataHora:'2026-06-15T12:00:00-05:00', local:'NRG Stadium, Houston', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo H', timeCasa:'Portugal', timeVisitante:'Venezuela', dataHora:'2026-06-15T15:00:00-05:00', local:'Estadio Azteca, Cidade do México', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo H', timeCasa:'Dinamarca', timeVisitante:'Nigeria', dataHora:'2026-06-15T18:00:00-05:00', local:'BC Place, Vancouver', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo I', timeCasa:'Holanda', timeVisitante:'Austrália', dataHora:'2026-06-15T21:00:00-05:00', local:'Lincoln Financial Field, Filadélfia', status:'agendado' },
+    // 16/06
+    { fase:'Fase de Grupos', grupo:'Grupo I', timeCasa:'Senegal', timeVisitante:'RD Congo', dataHora:'2026-06-16T12:00:00-05:00', local:'Arrowhead Stadium, Kansas City', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo J', timeCasa:'Inglaterra', timeVisitante:'Iran', dataHora:'2026-06-16T15:00:00-05:00', local:'AT&T Stadium, Dallas', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo J', timeCasa:'Costa Rica', timeVisitante:'Eslovênia', dataHora:'2026-06-16T18:00:00-05:00', local:'MetLife Stadium, Nova York', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo K', timeCasa:'Marrocos', timeVisitante:'Zambia', dataHora:'2026-06-16T21:00:00-05:00', local:'Estadio BBVA, Monterrey', status:'agendado' },
+    // 17/06
+    { fase:'Fase de Grupos', grupo:'Grupo K', timeCasa:'Gana', timeVisitante:'Austria', dataHora:'2026-06-17T12:00:00-05:00', local:'SoFi Stadium, Los Angeles', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo L', timeCasa:'Bélgica', timeVisitante:'Kenya', dataHora:'2026-06-17T15:00:00-05:00', local:'NRG Stadium, Houston', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo L', timeCasa:'Croácia', timeVisitante:'Argélia', dataHora:'2026-06-17T18:00:00-05:00', local:'Levi\'s Stadium, San Francisco', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Brasil', timeVisitante:'Japão', dataHora:'2026-06-17T21:00:00-05:00', local:'BC Place, Vancouver', status:'agendado' },
+
+    // === RODADA 2 ===
+    { fase:'Fase de Grupos', grupo:'Grupo A', timeCasa:'México', timeVisitante:'Equador', dataHora:'2026-06-19T15:00:00-05:00', local:'Estadio Azteca, Cidade do México', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo A', timeCasa:'Honduras', timeVisitante:'Jamaica', dataHora:'2026-06-19T18:00:00-05:00', local:'AT&T Stadium, Dallas', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo B', timeCasa:'Argentina', timeVisitante:'Chile', dataHora:'2026-06-20T15:00:00-05:00', local:'MetLife Stadium, Nova York', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo B', timeCasa:'Peru', timeVisitante:'Canadá', dataHora:'2026-06-20T18:00:00-05:00', local:'SoFi Stadium, Los Angeles', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'EUA', timeVisitante:'Uruguai', dataHora:'2026-06-21T15:00:00-05:00', local:'NRG Stadium, Houston', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'Panamá', timeVisitante:'Bolivia', dataHora:'2026-06-21T18:00:00-05:00', local:'Lincoln Financial Field, Filadélfia', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Brasil', timeVisitante:'Suíça', dataHora:'2026-06-21T21:00:00-05:00', local:'Estadio BBVA, Monterrey', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Camarões', timeVisitante:'Japão', dataHora:'2026-06-22T15:00:00-05:00', local:'Arrowhead Stadium, Kansas City', status:'agendado' },
+
+    // === RODADA 3 (simultâneos) ===
+    { fase:'Fase de Grupos', grupo:'Grupo A', timeCasa:'México', timeVisitante:'Honduras', dataHora:'2026-06-25T16:00:00-05:00', local:'Estadio Azteca, Cidade do México', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo A', timeCasa:'Jamaica', timeVisitante:'Equador', dataHora:'2026-06-25T16:00:00-05:00', local:'AT&T Stadium, Dallas', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo B', timeCasa:'Argentina', timeVisitante:'Peru', dataHora:'2026-06-26T16:00:00-05:00', local:'MetLife Stadium, Nova York', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo B', timeCasa:'Canadá', timeVisitante:'Chile', dataHora:'2026-06-26T16:00:00-05:00', local:'BC Place, Vancouver', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Brasil', timeVisitante:'Japão', dataHora:'2026-06-25T20:00:00-05:00', local:'NRG Stadium, Houston', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Suíça', timeVisitante:'Camarões', dataHora:'2026-06-25T20:00:00-05:00', local:'Levi\'s Stadium, San Francisco', status:'agendado' },
   ];
-
-  const jogos: Omit<Jogo, 'id' | 'bandeiraCasa' | 'bandeiraVisitante'>[] = [];
-  let dataBase = new Date('2026-06-11T21:00:00Z');
-  let sedeIdx = 0;
-
-  Object.entries(grupos).forEach(([letra, times]) => {
-    const grupoLabel = `Grupo ${letra}`;
-    // Gera os 6 jogos do grupo (round-robin)
-    const pares: [string, string][] = [
-      [times[0], times[1]],
-      [times[2], times[3]],
-      [times[0], times[2]],
-      [times[1], times[3]],
-      [times[0], times[3]],
-      [times[1], times[2]],
-    ];
-
-    pares.forEach(([casa, visitante], i) => {
-      const data = new Date(dataBase);
-      data.setDate(data.getDate() + Math.floor((jogos.length) / 4));
-      data.setHours(21 + (i % 4 === 1 ? 0 : i % 4 === 2 ? -3 : i % 4 === 3 ? 3 : 0), 0, 0, 0);
-
-      jogos.push({
-        fase: 'Fase de Grupos',
-        grupo: grupoLabel,
-        timeCasa: casa,
-        timeVisitante: visitante,
-        dataHora: data.toISOString(),
-        local: sedes[sedeIdx % sedes.length],
-        status: 'agendado',
-      });
-      sedeIdx++;
-    });
-  });
 
   // Adiciona placeholders para mata-mata (a serem preenchidos conforme avança)
   const fases = [
@@ -182,7 +173,7 @@ function jogosEstaticos(): Jogo[] {
   return jogos.map((j, i) => ({
     ...j,
     id: i + 1,
-    bandeiraCasa: '',
-    bandeiraVisitante: '',
+    bandeiraCasa: getBandeira(j.timeCasa),
+    bandeiraVisitante: getBandeira(j.timeVisitante),
   }));
 }

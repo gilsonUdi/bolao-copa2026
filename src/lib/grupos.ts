@@ -110,13 +110,15 @@ export async function buscarApostasUsuario(grupoId: string, usuarioId: string): 
   });
 }
 
-export async function marcarPago(grupoId: string, usuarioId: string, asaasPaymentId: string, link: string): Promise<void> {
+// pago=false: só salva o ID da cobrança (ainda não confirmado)
+// pago=true: confirma o pagamento (chamado pelo webhook do Asaas)
+export async function marcarPago(grupoId: string, usuarioId: string, asaasPaymentId: string, link: string, pago = false): Promise<void> {
   const grupo = await buscarGrupo(grupoId.replace('grupo_', ''));
   if (!grupo) return;
 
   const membrosAtualizados = grupo.membros.map((m) =>
     m.usuarioId === usuarioId
-      ? { ...m, pago: true, asaasPaymentId, asaasPaymentLink: link, entradaEm: Timestamp.fromDate(m.entradaEm) }
+      ? { ...m, pago, asaasPaymentId, asaasPaymentLink: link, entradaEm: Timestamp.fromDate(m.entradaEm) }
       : { ...m, entradaEm: Timestamp.fromDate(m.entradaEm) }
   );
 

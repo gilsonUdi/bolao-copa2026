@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Grupo, Jogo, Aposta, Ranking } from '@/types';
 import { calcularPontos } from '@/lib/pontuacao';
+import { EMOJI_BANDEIRAS } from '@/lib/paises';
 
 type Tab = 'apostas' | 'ranking' | 'pagamento';
 
@@ -279,10 +280,13 @@ export default function GrupoPage() {
                     <div className="flex items-center gap-3">
                       {/* Time Casa */}
                       <div className="flex-1 text-right">
-                        <p className="font-bold text-sm leading-tight">{jogo.timeCasa}</p>
-                        {jogo.bandeiraCasa && (
-                          <img src={jogo.bandeiraCasa} alt={jogo.timeCasa} className="w-8 h-6 object-cover ml-auto mt-1 rounded-sm" />
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          <p className="font-bold text-sm leading-tight">{jogo.timeCasa}</p>
+                          {jogo.bandeiraCasa
+                            ? <img src={jogo.bandeiraCasa} alt={jogo.timeCasa} className="w-8 h-6 object-cover rounded-sm flex-shrink-0" />
+                            : <span className="text-xl flex-shrink-0">{EMOJI_BANDEIRAS[jogo.timeCasa] || '🏳️'}</span>
+                          }
+                        </div>
                       </div>
 
                       {/* Placar */}
@@ -320,10 +324,13 @@ export default function GrupoPage() {
 
                       {/* Time Visitante */}
                       <div className="flex-1 text-left">
-                        <p className="font-bold text-sm leading-tight">{jogo.timeVisitante}</p>
-                        {jogo.bandeiraVisitante && (
-                          <img src={jogo.bandeiraVisitante} alt={jogo.timeVisitante} className="w-8 h-6 object-cover mt-1 rounded-sm" />
-                        )}
+                        <div className="flex items-center gap-2">
+                          {jogo.bandeiraVisitante
+                            ? <img src={jogo.bandeiraVisitante} alt={jogo.timeVisitante} className="w-8 h-6 object-cover rounded-sm flex-shrink-0" />
+                            : <span className="text-xl flex-shrink-0">{EMOJI_BANDEIRAS[jogo.timeVisitante] || '🏳️'}</span>
+                          }
+                          <p className="font-bold text-sm leading-tight">{jogo.timeVisitante}</p>
+                        </div>
                       </div>
                     </div>
 
