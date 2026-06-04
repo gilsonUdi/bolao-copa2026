@@ -16,6 +16,7 @@ export async function criarGrupo(dados: {
   adminTelefone: string;
   valorAposta: number;
   descricao?: string;
+  senhaAdmin: string;
 }): Promise<Grupo> {
   const codigo = gerarCodigo();
   const id = `grupo_${codigo}`;
@@ -39,6 +40,7 @@ export async function criarGrupo(dados: {
     membros: [membro],
     jogosAtivos: [],
     vencedores: [],
+    senhaAdmin: dados.senhaAdmin,
     status: 'aberto',
     criadoEm: new Date(),
   };
@@ -59,6 +61,8 @@ export async function buscarGrupo(codigo: string): Promise<Grupo | null> {
   const data = snap.data();
   return {
     ...data,
+    jogosAtivos: data.jogosAtivos ?? [],   // garante default para grupos antigos
+    vencedores: data.vencedores ?? [],
     criadoEm: data.criadoEm.toDate(),
     membros: data.membros.map((m: MembroGrupo & { entradaEm: Timestamp }) => ({
       ...m,
@@ -124,6 +128,18 @@ export async function marcarPago(grupoId: string, usuarioId: string, asaasPaymen
       : { ...m, entradaEm: Timestamp.fromDate(m.entradaEm) }
   );
 
+  await updateDoc(doc(db, 'grupos', grupoId), { membros: membrosAtualizados });
+}
+
+// Membro cadastra sua chave PIX
+export async function salvarChavePix(grupoId: string, usuarioId: string, chavePix: string, tipoChavePix: string): Promise<void> {
+  const grupo = await buscarGrupo(grupoId.replace('grupo_', ''));
+  if (!grupo) return;
+  const membrosAtualizados = grupo.membros.map((m) =>
+    m.usuarioId === usuarioId
+      ? { ...m, chavePix, tipoChavePix, entradaEm: Timestamp.fromDate(m.entradaEm) }
+      : { ...m, entradaEm: Timestamp.fromDate(m.entradaEm) }
+  );
   await updateDoc(doc(db, 'grupos', grupoId), { membros: membrosAtualizados });
 }
 

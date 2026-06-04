@@ -17,6 +17,7 @@ export default function Home() {
   const [adminTelefone, setAdminTelefone] = useState('');
   const [valorAposta, setValorAposta] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [senhaAdmin, setSenhaAdmin] = useState('');
 
   // Entrar no grupo
   const [codigoGrupo, setCodigoGrupo] = useState('');
@@ -31,7 +32,7 @@ export default function Home() {
       const res = await fetch('/api/grupos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: nomeGrupo, adminNome, adminTelefone, valorAposta: Number(valorAposta), descricao }),
+        body: JSON.stringify({ nome: nomeGrupo, adminNome, adminTelefone, valorAposta: Number(valorAposta), descricao, senhaAdmin }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -165,6 +166,20 @@ export default function Home() {
               <div>
                 <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Descrição (opcional)</label>
                 <textarea className="input-copa resize-none" rows={2} placeholder="Regras, informações do grupo..." value={descricao} onChange={e => setDescricao(e.target.value)} />
+              </div>
+
+              <div>
+                <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">🔐 Senha do Admin *</label>
+                <input
+                  className="input-copa"
+                  type="password"
+                  placeholder="Senha para acessar o painel de admin"
+                  value={senhaAdmin}
+                  onChange={e => setSenhaAdmin(e.target.value)}
+                  required
+                  minLength={4}
+                />
+                <p className="text-white/30 text-xs mt-1">Guarde essa senha — ela dá acesso ao painel administrativo</p>
               </div>
 
               {erro && <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg p-2">{erro}</p>}

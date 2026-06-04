@@ -23,16 +23,27 @@ export default function AdminPage() {
   const [premioTotal, setPremioTotal] = useState(0);
   const [vencedoresDeclarados, setVencedoresDeclarados] = useState<Vencedor[]>([]);
   const [pagandoVencedor, setPagandoVencedor] = useState<number | null>(null);
+  const [modoAuditoria, setModoAuditoria] = useState(false);
+  const [vencedoresPreview, setVencedoresPreview] = useState<Vencedor[]>([]);
   const [abaAdmin, setAbaAdmin] = useState<'compartilhar'|'jogos'|'vencedores'|'financeiro'>('compartilhar');
+
+  // Autenticação do admin
+  const [autenticado, setAutenticado] = useState(false);
+  const [senhaInput, setSenhaInput] = useState('');
+  const [senhaErro, setSenhaErro] = useState('');
+  const [verificandoSenha, setVerificandoSenha] = useState(false);
 
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || '');
   const linkGrupo = `${siteUrl}/grupo/${codigo}`;
+  const SESSION_KEY = `admin_auth_${codigo}`;
 
   useEffect(() => {
     const u = localStorage.getItem('bolao_usuario');
     if (!u) { router.push('/'); return; }
     setUsuario(JSON.parse(u));
-  }, [router]);
+    // Verifica se já está autenticado nesta sessão
+    if (sessionStorage.getItem(SESSION_KEY) === 'true') setAutenticado(true);
+  }, [router, SESSION_KEY]);
 
   const carregarDados = useCallback(async () => {
     try {
@@ -75,6 +86,28 @@ export default function AdminPage() {
     } finally {
       setTogglingJogo(null);
     }
+  }
+
+  function abrirAuditoria() {
+    if (!grupo || ranking.length === 0) return;
+    const membrosPageos = grupo.membros.filter(m => m.pago);
+    const totalPago = membrosPageos.length * grupo.valorAposta * 0.9;
+    const percents = [0.6, 0.3, 0.1];
+    const top3 = ranking.slice(0, 3);
+    const preview: Vencedor[] = top3.map((r, i) => {
+      const membro = grupo.membros.find(m => m.usuarioId === r.usuarioId);
+      return {
+        posicao: i + 1,
+        usuarioId: r.usuarioId,
+        nome: r.nome,
+        telefone: membro?.telefone || '',
+        pontos: r.pontos,
+        premioValor: Math.round(totalPago * percents[i] * 100) / 100,
+        premioPago: false,
+      };
+    });
+    setVencedoresPreview(preview);
+    setModoAuditoria(true);
   }
 
   async function declararVencedores() {
@@ -159,6 +192,31 @@ export default function AdminPage() {
     }
   }
 
+  async function verificarSenha(e: React.FormEvent) {
+    e.preventDefault();
+    setSenhaErro('');
+    setVerificandoSenha(true);
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo, senha: senhaInput }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        sessionStorage.setItem(SESSION_KEY, 'true');
+        setAutenticado(true);
+      } else {
+        setSenhaErro('Senha incorreta. Tente novamente.');
+        setSenhaInput('');
+      }
+    } catch {
+      setSenhaErro('Erro ao verificar senha.');
+    } finally {
+      setVerificandoSenha(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen hero-gradient flex items-center justify-center">
@@ -168,6 +226,54 @@ export default function AdminPage() {
   }
 
   if (!grupo || !usuario) return null;
+
+  // Tela de senha do admin
+  if (!autenticado) {
+    return (
+      <div className="min-h-screen hero-gradient flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-sm animate-slide-up">
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-3">🔐</div>
+            <h1 className="text-2xl font-black" style={{color:'#F4A81D'}}>Painel do Admin</h1>
+            <p className="text-white/50 text-sm mt-1">{grupo?.nome || codigo}</p>
+          </div>
+
+          <form onSubmit={verificarSenha} className="card-copa p-6 flex flex-col gap-4">
+            <div>
+              <label className="text-white/60 text-xs block mb-2 uppercase tracking-wide">Senha do Administrador</label>
+              <input
+                className="input-copa"
+                type="password"
+                placeholder="Digite a senha do admin"
+                value={senhaInput}
+                onChange={e => setSenhaInput(e.target.value)}
+                autoFocus
+                required
+              />
+            </div>
+
+            {senhaErro && (
+              <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg p-2">
+                🚫 {senhaErro}
+              </p>
+            )}
+
+            <button type="submit" className="btn-copa" disabled={verificandoSenha || !senhaInput}>
+              {verificandoSenha ? '⏳ Verificando...' : '🔓 Entrar no Admin'}
+            </button>
+
+            <button
+              type="button"
+              className="text-white/30 text-sm text-center hover:text-white/60 transition-colors"
+              onClick={() => router.push(`/grupo/${codigo}`)}
+            >
+              ← Voltar para o grupo
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   const membrosPageos = grupo.membros.filter(m => m.pago);
   const totalArrecadado = membrosPageos.length * grupo.valorAposta;
@@ -186,9 +292,12 @@ export default function AdminPage() {
           </div>
           <button
             className="text-white/50 hover:text-white text-sm transition-colors"
-            onClick={() => router.push(`/grupo/${codigo}`)}
+            onClick={() => {
+              sessionStorage.removeItem(SESSION_KEY);
+              router.push(`/grupo/${codigo}`);
+            }}
           >
-            Ver como membro →
+            Sair do admin →
           </button>
         </div>
       </header>
@@ -333,9 +442,58 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
+              ) : modoAuditoria ? (
+                // Tela de AUDITORIA
+                <div>
+                  <div className="p-3 rounded-lg mb-4" style={{background:'rgba(244,168,29,0.1)', border:'1px solid rgba(244,168,29,0.3)'}}>
+                    <p className="font-bold text-sm mb-1" style={{color:'#F4A81D'}}>⚠️ Auditoria antes de confirmar</p>
+                    <p className="text-white/50 text-xs">Verifique os dados abaixo. Após confirmar, os PIX serão enviados automaticamente.</p>
+                  </div>
+
+                  {vencedoresPreview.map((v) => {
+                    const membro = grupo.membros.find(m => m.usuarioId === v.usuarioId);
+                    const temChavePix = !!membro?.chavePix;
+                    return (
+                      <div key={v.posicao} className="mb-3 p-3 rounded-lg" style={{background:'rgba(255,255,255,0.04)', border: temChavePix ? '1px solid rgba(74,222,128,0.2)' : '1px solid rgba(239,68,68,0.3)'}}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold">{['🥇','🥈','🥉'][v.posicao-1]} {v.nome}</span>
+                          <span className="font-black" style={{color:'#4ade80'}}>R$ {v.premioValor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+                        </div>
+                        <div className="text-xs space-y-1">
+                          <p className="text-white/50">📊 {v.pontos} pontos</p>
+                          {temChavePix ? (
+                            <p style={{color:'#4ade80'}}>✅ Chave PIX: <span className="font-mono">{membro?.tipoChavePix} — {membro?.chavePix}</span></p>
+                          ) : (
+                            <p className="text-red-400">🚫 Sem chave PIX cadastrada — membro precisa cadastrar</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      className="flex-1 py-2 rounded-lg text-sm font-bold text-white/50"
+                      style={{background:'rgba(255,255,255,0.06)'}}
+                      onClick={() => setModoAuditoria(false)}
+                    >
+                      ← Voltar
+                    </button>
+                    <button
+                      className="btn-copa flex-1 py-2 text-sm"
+                      disabled={vencedoresPreview.some(v => !grupo.membros.find(m => m.usuarioId === v.usuarioId)?.chavePix)}
+                      onClick={async () => { setModoAuditoria(false); await declararVencedores(); }}
+                    >
+                      ✅ Confirmar e Declarar Vencedores
+                    </button>
+                  </div>
+                  {vencedoresPreview.some(v => !grupo.membros.find(m => m.usuarioId === v.usuarioId)?.chavePix) && (
+                    <p className="text-red-400 text-xs text-center mt-2">⚠️ Todos os vencedores precisam ter chave PIX cadastrada</p>
+                  )}
+                </div>
               ) : (
-                <button className="btn-copa w-full" onClick={declararVencedores}>
-                  🏆 Declarar Vencedores e Distribuir Prêmio
+                <button className="btn-copa w-full" onClick={abrirAuditoria}>
+                  🏆 Calcular Vencedores e Auditar
                 </button>
               )}
             </>

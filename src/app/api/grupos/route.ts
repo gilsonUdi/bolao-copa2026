@@ -4,9 +4,9 @@ import { criarGrupo, buscarGrupo } from '@/lib/grupos';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { nome, adminNome, adminTelefone, valorAposta, descricao } = body;
+    const { nome, adminNome, adminTelefone, valorAposta, descricao, senhaAdmin } = body;
 
-    if (!nome || !adminNome || !adminTelefone || !valorAposta) {
+    if (!nome || !adminNome || !adminTelefone || !valorAposta || !senhaAdmin) {
       return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 });
     }
 
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       adminTelefone,
       valorAposta: Number(valorAposta),
       descricao,
+      senhaAdmin,
     });
 
     return NextResponse.json({ grupo });

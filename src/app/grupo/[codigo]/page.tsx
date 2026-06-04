@@ -45,6 +45,10 @@ export default function GrupoPage() {
   // Pagamento
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
+  const [chavePix, setChavePix] = useState('');
+  const [tipoChavePix, setTipoChavePix] = useState<'CPF'|'PHONE'|'EMAIL'|'EVP'>('CPF');
+  const [salvandoChave, setSalvandoChave] = useState(false);
+  const [chavePixSalva, setChavePixSalva] = useState(false);
   const [pixData, setPixData] = useState<{ pixCopiaECola: string; pixQrCodeImage: string; invoiceUrl: string; valor: number } | null>(null);
   const [gerandoPix, setGerandoPix] = useState(false);
   const [erroPag, setErroPag] = useState('');
@@ -145,6 +149,13 @@ export default function GrupoPage() {
     setGerandoPix(true);
     setErroPag('');
     try {
+      // Salva chave PIX primeiro
+      await fetch('/api/pix-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grupoId: `grupo_${codigo}`, usuarioId: usuario.id, chavePix, tipoChavePix }),
+      });
+      // Gera cobrança Asaas
       const res = await fetch('/api/pagamento', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -182,10 +193,9 @@ export default function GrupoPage() {
     );
   }
 
-  // Apenas jogos liberados pelo admin (se lista vazia, mostra todos)
-  const jogosLiberados = (grupo.jogosAtivos || []).length > 0
-    ? jogos.filter(j => (grupo.jogosAtivos || []).includes(j.id))
-    : jogos;
+  // Apenas jogos liberados pelo admin — se nenhum foi liberado, não mostra nada
+  const jogosAtivos = grupo.jogosAtivos || [];
+  const jogosLiberados = jogos.filter(j => jogosAtivos.includes(j.id));
   const fases = ['Todos', ...Array.from(new Set(jogosLiberados.map((j) => j.fase)))];
   const jogosFiltrados = faseAtiva === 'Todos' ? jogosLiberados : jogosLiberados.filter((j) => j.fase === faseAtiva);
   const membroAtual = grupo.membros.find((m) => m.usuarioId === usuario?.id);
@@ -495,8 +505,40 @@ export default function GrupoPage() {
                     <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">E-mail (opcional)</label>
                     <input className="input-copa" placeholder="seu@email.com" type="email" value={email} onChange={e => setEmail(e.target.value)} />
                   </div>
+
+                  {/* Chave PIX para receber prêmio */}
+                  <div className="p-3 rounded-lg" style={{background:'rgba(244,168,29,0.08)', border:'1px solid rgba(244,168,29,0.2)'}}>
+                    <p className="text-xs font-bold mb-2" style={{color:'#F4A81D'}}>🏆 Chave PIX para receber prêmio</p>
+                    <div className="flex gap-2 mb-2">
+                      {(['CPF','PHONE','EMAIL','EVP'] as const).map(tipo => (
+                        <button key={tipo} type="button"
+                          onClick={() => setTipoChavePix(tipo)}
+                          className="flex-1 py-1 rounded text-xs font-bold transition-all"
+                          style={tipoChavePix === tipo
+                            ? {background:'#F4A81D', color:'#0D1F3C'}
+                            : {background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.4)'}
+                          }>
+                          {tipo === 'PHONE' ? 'Tel' : tipo === 'EVP' ? 'Aleatória' : tipo}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      className="input-copa"
+                      placeholder={
+                        tipoChavePix === 'CPF' ? '000.000.000-00' :
+                        tipoChavePix === 'PHONE' ? '(11) 99999-9999' :
+                        tipoChavePix === 'EMAIL' ? 'seu@email.com' :
+                        'Cole sua chave aleatória aqui'
+                      }
+                      value={chavePix}
+                      onChange={e => setChavePix(e.target.value)}
+                      required
+                    />
+                    <p className="text-white/30 text-xs mt-1">Necessário para receber o prêmio caso ganhe</p>
+                  </div>
+
                   {erroPag && <p className="text-red-400 text-sm bg-red-500/10 rounded p-2 text-center">{erroPag}</p>}
-                  <button type="submit" className="btn-copa" disabled={gerandoPix}>
+                  <button type="submit" className="btn-copa" disabled={gerandoPix || !chavePix}>
                     {gerandoPix ? '⏳ Gerando PIX...' : '💳 Gerar PIX para Pagamento'}
                   </button>
                 </form>
@@ -526,6 +568,16 @@ export default function GrupoPage() {
           </div>
         )}
       </main>
+
+      {/* Botão discreto de acesso admin — aparece para todos mas pede senha */}
+      <div className="text-center pb-6">
+        <button
+          onClick={() => router.push(`/grupo/${codigo}/admin`)}
+          className="text-white/20 hover:text-white/50 text-xs transition-colors"
+        >
+          👑 Admin
+        </button>
+      </div>
     </div>
   );
 }

@@ -14,8 +14,9 @@ export interface Grupo {
   valorAposta: number;
   descricao?: string;
   membros: MembroGrupo[];
-  jogosAtivos: number[]; // IDs dos jogos liberados para apostas pelo admin
-  vencedores: Vencedor[]; // resultado final declarado pelo admin
+  jogosAtivos: number[];
+  vencedores: Vencedor[];
+  senhaAdmin: string; // hash da senha do admin
   status: 'aberto' | 'fechado' | 'encerrado';
   criadoEm: Date;
 }
@@ -36,6 +37,8 @@ export interface MembroGrupo {
   nome: string;
   telefone: string;
   pago: boolean;
+  chavePix?: string;
+  tipoChavePix?: 'CPF' | 'PHONE' | 'EMAIL' | 'EVP';
   asaasPaymentId?: string;
   asaasPaymentLink?: string;
   entradaEm: Date;

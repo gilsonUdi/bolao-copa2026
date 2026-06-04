@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (acao === 'pagar') {
-      // Paga o vencedor de uma posição via PIX
+      // Paga o vencedor de uma posição via PIX usando a chave cadastrada
       const grupo = await buscarGrupo(grupoId.replace('grupo_', ''));
       if (!grupo) return NextResponse.json({ error: 'Grupo não encontrado' }, { status: 404 });
 
@@ -64,8 +64,15 @@ export async function POST(req: NextRequest) {
       if (!vencedor) return NextResponse.json({ error: 'Vencedor não encontrado' }, { status: 404 });
       if (vencedor.premioPago) return NextResponse.json({ error: 'Prêmio já pago' }, { status: 400 });
 
+      // Busca a chave PIX do membro
+      const membro = grupo.membros.find((m) => m.usuarioId === vencedor.usuarioId);
+      if (!membro?.chavePix) {
+        return NextResponse.json({ error: `${vencedor.nome} não cadastrou chave PIX` }, { status: 400 });
+      }
+
       const transferencia = await pagarVencedorPix({
-        telefone: vencedor.telefone,
+        chavePix: membro.chavePix,
+        tipoChavePix: membro.tipoChavePix || 'PHONE',
         valor: vencedor.premioValor,
         descricao: `Prêmio ${posicao}º lugar - Bolão Copa 2026 - ${grupo.nome}`,
       });

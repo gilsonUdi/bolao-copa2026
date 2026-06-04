@@ -86,17 +86,22 @@ export async function webhookConfirmado(paymentId: string): Promise<boolean> {
   return pagamento.status === 'RECEIVED' || pagamento.status === 'CONFIRMED';
 }
 
-// Envia prêmio via PIX para o vencedor (chave PIX = telefone)
+// Envia prêmio via PIX para o vencedor usando a chave cadastrada
 export async function pagarVencedorPix(params: {
-  telefone: string;
+  chavePix: string;
+  tipoChavePix: string;
   valor: number;
   descricao: string;
 }) {
-  const telefone = params.telefone.replace(/\D/g, '');
+  // Formata a chave conforme o tipo
+  let chave = params.chavePix.replace(/\s/g, '');
+  if (params.tipoChavePix === 'CPF' || params.tipoChavePix === 'PHONE') {
+    chave = chave.replace(/\D/g, '');
+  }
   return asaasRequest('/transfers', 'POST', {
     value: params.valor,
-    pixAddressKey: telefone,
-    pixAddressKeyType: 'PHONE',
+    pixAddressKey: chave,
+    pixAddressKeyType: params.tipoChavePix,
     description: params.descricao,
     scheduleDate: new Date().toISOString().split('T')[0],
   });
