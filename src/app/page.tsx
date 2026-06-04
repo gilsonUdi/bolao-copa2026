@@ -142,9 +142,18 @@ export default function Home() {
 
               <div>
                 <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Valor da Aposta por Pessoa *</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 font-bold text-sm">R$</span>
-                  <input className="input-copa pl-10" placeholder="50,00" value={valorAposta} onChange={e => setValorAposta(e.target.value)} required type="number" min="1" step="0.01" />
+                <div className="flex items-center gap-2">
+                  <span className="text-white/60 font-bold text-sm flex-shrink-0">R$</span>
+                  <input
+                    className="input-copa flex-1"
+                    placeholder="50,00"
+                    value={valorAposta}
+                    onChange={e => setValorAposta(e.target.value)}
+                    required
+                    type="number"
+                    min="1"
+                    step="0.01"
+                  />
                 </div>
                 {Number(valorAposta) > 0 && (
                   <p className="text-xs mt-1" style={{color:'#4ade80'}}>

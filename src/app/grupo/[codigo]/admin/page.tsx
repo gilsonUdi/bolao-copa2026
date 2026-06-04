@@ -19,7 +19,7 @@ export default function AdminPage() {
   const [atualizandoJogo, setAtualizandoJogo] = useState<number | null>(null);
   const [placarEdit, setPlacarEdit] = useState<Record<number, { casa: string; visitante: string }>>({});
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || '');
   const linkGrupo = `${siteUrl}/grupo/${codigo}`;
 
   useEffect(() => {
