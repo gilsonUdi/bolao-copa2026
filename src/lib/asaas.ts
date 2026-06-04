@@ -85,3 +85,19 @@ export async function webhookConfirmado(paymentId: string): Promise<boolean> {
   const pagamento = await consultarPagamento(paymentId);
   return pagamento.status === 'RECEIVED' || pagamento.status === 'CONFIRMED';
 }
+
+// Envia prêmio via PIX para o vencedor (chave PIX = telefone)
+export async function pagarVencedorPix(params: {
+  telefone: string;
+  valor: number;
+  descricao: string;
+}) {
+  const telefone = params.telefone.replace(/\D/g, '');
+  return asaasRequest('/transfers', 'POST', {
+    value: params.valor,
+    pixAddressKey: telefone,
+    pixAddressKeyType: 'PHONE',
+    description: params.descricao,
+    scheduleDate: new Date().toISOString().split('T')[0],
+  });
+}

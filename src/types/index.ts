@@ -8,14 +8,27 @@ export interface Usuario {
 export interface Grupo {
   id: string;
   nome: string;
-  codigo: string; // código único de 6 chars para join
+  codigo: string;
   adminId: string;
   adminNome: string;
-  valorAposta: number; // valor por participante
+  valorAposta: number;
   descricao?: string;
   membros: MembroGrupo[];
+  jogosAtivos: number[]; // IDs dos jogos liberados para apostas pelo admin
+  vencedores: Vencedor[]; // resultado final declarado pelo admin
   status: 'aberto' | 'fechado' | 'encerrado';
   criadoEm: Date;
+}
+
+export interface Vencedor {
+  posicao: number; // 1, 2, 3
+  usuarioId: string;
+  nome: string;
+  telefone: string;
+  pontos: number;
+  premioValor: number;
+  premioPago: boolean;
+  asaasTransferId?: string;
 }
 
 export interface MembroGrupo {

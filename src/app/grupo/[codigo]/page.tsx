@@ -182,8 +182,12 @@ export default function GrupoPage() {
     );
   }
 
-  const fases = ['Todos', ...Array.from(new Set(jogos.map((j) => j.fase)))];
-  const jogosFiltrados = faseAtiva === 'Todos' ? jogos : jogos.filter((j) => j.fase === faseAtiva);
+  // Apenas jogos liberados pelo admin (se lista vazia, mostra todos)
+  const jogosLiberados = (grupo.jogosAtivos || []).length > 0
+    ? jogos.filter(j => (grupo.jogosAtivos || []).includes(j.id))
+    : jogos;
+  const fases = ['Todos', ...Array.from(new Set(jogosLiberados.map((j) => j.fase)))];
+  const jogosFiltrados = faseAtiva === 'Todos' ? jogosLiberados : jogosLiberados.filter((j) => j.fase === faseAtiva);
   const membroAtual = grupo.membros.find((m) => m.usuarioId === usuario?.id);
   const jaPagou = membroAtual?.pago ?? false;
   const totalArrecadado = grupo.membros.filter((m) => m.pago).length * grupo.valorAposta;
@@ -254,8 +258,9 @@ export default function GrupoPage() {
 
             {jogosFiltrados.length === 0 && (
               <div className="text-center py-12 text-white/40">
-                <div className="text-4xl mb-2">📅</div>
-                <p>Jogos serão exibidos assim que o calendário for definido</p>
+                <div className="text-4xl mb-2">🔒</div>
+                <p>Nenhum jogo liberado pelo organizador ainda</p>
+                <p className="text-xs mt-1">Aguarde o administrador liberar os jogos para apostas</p>
               </div>
             )}
 

@@ -3,7 +3,7 @@ import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc,
   arrayUnion, query, where, Timestamp,
 } from 'firebase/firestore';
-import { Grupo, MembroGrupo, Aposta } from '@/types';
+import { Grupo, MembroGrupo, Aposta, Vencedor } from '@/types';
 
 function gerarCodigo(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -37,6 +37,8 @@ export async function criarGrupo(dados: {
     valorAposta: dados.valorAposta,
     descricao: dados.descricao,
     membros: [membro],
+    jogosAtivos: [],
+    vencedores: [],
     status: 'aberto',
     criadoEm: new Date(),
   };
@@ -123,4 +125,32 @@ export async function marcarPago(grupoId: string, usuarioId: string, asaasPaymen
   );
 
   await updateDoc(doc(db, 'grupos', grupoId), { membros: membrosAtualizados });
+}
+
+// Admin ativa ou desativa um jogo para apostas
+export async function toggleJogoAtivo(grupoId: string, jogoId: number, ativar: boolean): Promise<void> {
+  const grupoRef = doc(db, 'grupos', grupoId);
+  const snap = await getDoc(grupoRef);
+  if (!snap.exists()) return;
+  const jogosAtivos: number[] = snap.data().jogosAtivos || [];
+  const novos = ativar
+    ? [...new Set([...jogosAtivos, jogoId])]
+    : jogosAtivos.filter((id) => id !== jogoId);
+  await updateDoc(grupoRef, { jogosAtivos: novos });
+}
+
+// Admin declara os vencedores e distribui o prêmio
+export async function salvarVencedores(grupoId: string, vencedores: Vencedor[]): Promise<void> {
+  await updateDoc(doc(db, 'grupos', grupoId), { vencedores });
+}
+
+// Marca vencedor como pago
+export async function marcarVencedorPago(grupoId: string, posicao: number, asaasTransferId: string): Promise<void> {
+  const snap = await getDoc(doc(db, 'grupos', grupoId));
+  if (!snap.exists()) return;
+  const vencedores: Vencedor[] = snap.data().vencedores || [];
+  const atualizados = vencedores.map((v) =>
+    v.posicao === posicao ? { ...v, premioPago: true, asaasTransferId } : v
+  );
+  await updateDoc(doc(db, 'grupos', grupoId), { vencedores: atualizados });
 }

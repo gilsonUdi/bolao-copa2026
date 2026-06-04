@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Grupo, Jogo } from '@/types';
+import { Grupo, Jogo, Ranking, Vencedor } from '@/types';
 
 interface Usuario { id: string; nome: string; telefone: string; }
 
@@ -18,6 +18,12 @@ export default function AdminPage() {
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [atualizandoJogo, setAtualizandoJogo] = useState<number | null>(null);
   const [placarEdit, setPlacarEdit] = useState<Record<number, { casa: string; visitante: string }>>({});
+  const [togglingJogo, setTogglingJogo] = useState<number | null>(null);
+  const [ranking, setRanking] = useState<Ranking[]>([]);
+  const [premioTotal, setPremioTotal] = useState(0);
+  const [vencedoresDeclarados, setVencedoresDeclarados] = useState<Vencedor[]>([]);
+  const [pagandoVencedor, setPagandoVencedor] = useState<number | null>(null);
+  const [abaAdmin, setAbaAdmin] = useState<'compartilhar'|'jogos'|'vencedores'|'financeiro'>('compartilhar');
 
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || '');
   const linkGrupo = `${siteUrl}/grupo/${codigo}`;
@@ -30,14 +36,19 @@ export default function AdminPage() {
 
   const carregarDados = useCallback(async () => {
     try {
-      const [gRes, jRes] = await Promise.all([
+      const [gRes, jRes, rRes] = await Promise.all([
         fetch(`/api/grupos?codigo=${codigo}`),
         fetch('/api/jogos'),
+        fetch(`/api/admin/vencedores?grupoId=grupo_${codigo}`),
       ]);
       const gData = await gRes.json();
       const jData = await jRes.json();
+      const rData = await rRes.json();
       setGrupo(gData.grupo);
       setJogos(jData.jogos || []);
+      setRanking(rData.ranking || []);
+      setPremioTotal(rData.premioTotal || 0);
+      setVencedoresDeclarados(rData.vencedoresDeclarados || []);
     } finally {
       setLoading(false);
     }
@@ -51,6 +62,66 @@ export default function AdminPage() {
       router.push(`/grupo/${codigo}`);
     }
   }, [grupo, usuario, codigo, router]);
+
+  async function toggleJogo(jogoId: number, ativar: boolean) {
+    setTogglingJogo(jogoId);
+    try {
+      await fetch('/api/admin/jogos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grupoId: `grupo_${codigo}`, jogoId, ativar }),
+      });
+      await carregarDados();
+    } finally {
+      setTogglingJogo(null);
+    }
+  }
+
+  async function declararVencedores() {
+    if (!grupo) return;
+    const membrosPageos = grupo.membros.filter(m => m.pago);
+    const totalPago = membrosPageos.length * grupo.valorAposta * 0.9;
+    // Distribui: 60% 1º, 30% 2º, 10% 3º
+    const top3 = ranking.slice(0, 3);
+    const percents = [0.6, 0.3, 0.1];
+    const vencedores: Vencedor[] = top3.map((r, i) => {
+      const membro = grupo.membros.find(m => m.usuarioId === r.usuarioId);
+      return {
+        posicao: i + 1,
+        usuarioId: r.usuarioId,
+        nome: r.nome,
+        telefone: membro?.telefone || '',
+        pontos: r.pontos,
+        premioValor: Math.round(totalPago * percents[i] * 100) / 100,
+        premioPago: false,
+      };
+    });
+    await fetch('/api/admin/vencedores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grupoId: `grupo_${codigo}`, acao: 'declarar', vencedores }),
+    });
+    await carregarDados();
+  }
+
+  async function pagarVencedor(posicao: number) {
+    setPagandoVencedor(posicao);
+    try {
+      const res = await fetch('/api/admin/vencedores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grupoId: `grupo_${codigo}`, acao: 'pagar', posicao }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      alert(`✅ PIX enviado! ID: ${data.transferenciaId}`);
+      await carregarDados();
+    } catch (err: unknown) {
+      alert(`Erro: ${err instanceof Error ? err.message : 'Falha ao pagar'}`);
+    } finally {
+      setPagandoVencedor(null);
+    }
+  }
 
   function copiarLink() {
     navigator.clipboard.writeText(linkGrupo);
@@ -122,6 +193,24 @@ export default function AdminPage() {
         </div>
       </header>
 
+      {/* Abas admin */}
+      <div className="px-4 pt-2" style={{background:'rgba(13,31,60,0.95)', borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+        <div className="max-w-2xl mx-auto flex overflow-x-auto">
+          {([
+            {id:'compartilhar', label:'🔗 Link'},
+            {id:'jogos', label:'⚽ Liberar Jogos'},
+            {id:'vencedores', label:'🏆 Vencedores'},
+            {id:'financeiro', label:'💰 Financeiro'},
+          ] as {id: typeof abaAdmin, label: string}[]).map(a => (
+            <button key={a.id} onClick={() => setAbaAdmin(a.id)}
+              className="flex-shrink-0 px-4 py-3 text-sm font-bold transition-all whitespace-nowrap"
+              style={abaAdmin === a.id ? {color:'#F4A81D', borderBottom:'2px solid #F4A81D'} : {color:'rgba(255,255,255,0.35)'}}>
+              {a.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">
 
         {/* Cards de stats */}
@@ -140,8 +229,8 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Compartilhar link */}
-        <div className="card-copa p-5 mb-5">
+        {/* ABA: Compartilhar */}
+        {abaAdmin === 'compartilhar' && <div className="card-copa p-5 mb-5">
           <h2 className="font-bold mb-3" style={{color:'#F4A81D'}}>🔗 Compartilhar Bolão</h2>
           <div className="flex items-center gap-2 mb-3 p-3 rounded-lg" style={{background:'rgba(0,0,0,0.3)'}}>
             <code className="flex-1 text-xs text-white/70 break-all">{linkGrupo}</code>
@@ -158,10 +247,103 @@ export default function AdminPage() {
             <p className="text-white/40 text-xs">Código do grupo:</p>
             <p className="font-mono font-black text-2xl tracking-widest mt-1" style={{color:'#F4A81D'}}>{codigo}</p>
           </div>
-        </div>
+        </div>}
 
-        {/* Pagamentos */}
-        <div className="card-copa p-5 mb-5">
+        {/* ABA: Liberar Jogos */}
+        {abaAdmin === 'jogos' && <div className="card-copa p-5 mb-5">
+          <h2 className="font-bold mb-1" style={{color:'#F4A81D'}}>⚽ Liberar Jogos para Apostas</h2>
+          <p className="text-white/40 text-xs mb-4">Ative os jogos que os membros poderão apostar. Apenas jogos liberados aparecem para eles.</p>
+
+          {jogos.filter(j => j.status !== 'encerrado').map((jogo) => {
+            const ativo = (grupo.jogosAtivos || []).includes(jogo.id);
+            return (
+              <div key={jogo.id} className="flex items-center justify-between py-3 gap-3" style={{borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{jogo.timeCasa} x {jogo.timeVisitante}</p>
+                  <p className="text-xs text-white/30">{jogo.grupo} · {new Date(jogo.dataHora).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', timeZone:'America/Sao_Paulo'})}</p>
+                </div>
+                <button
+                  disabled={togglingJogo === jogo.id}
+                  onClick={() => toggleJogo(jogo.id, !ativo)}
+                  className="flex-shrink-0 px-4 py-2 rounded-lg font-bold text-sm transition-all"
+                  style={ativo
+                    ? {background:'rgba(74,222,128,0.2)', color:'#4ade80', border:'1px solid rgba(74,222,128,0.4)'}
+                    : {background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.4)', border:'1px solid rgba(255,255,255,0.1)'}
+                  }
+                >
+                  {togglingJogo === jogo.id ? '⏳' : ativo ? '✅ Liberado' : '🔒 Liberar'}
+                </button>
+              </div>
+            );
+          })}
+          <p className="text-xs text-white/30 mt-3">
+            {(grupo.jogosAtivos || []).length} jogo(s) liberado(s) para apostas
+          </p>
+        </div>}
+
+        {/* ABA: Vencedores */}
+        {abaAdmin === 'vencedores' && <div className="card-copa p-5 mb-5">
+          <h2 className="font-bold mb-1" style={{color:'#F4A81D'}}>🏆 Declarar Vencedores e Pagar Prêmio</h2>
+          <p className="text-white/40 text-xs mb-4">
+            Prêmio disponível: <strong className="text-white">R$ {premioTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>
+            {' '}(distribuído: 60% · 30% · 10%)
+          </p>
+
+          {ranking.length === 0 ? (
+            <p className="text-white/30 text-center py-4">Nenhum jogo encerrado ainda — o ranking aparecerá conforme os placares forem registrados.</p>
+          ) : (
+            <>
+              {/* Ranking atual */}
+              <div className="mb-4">
+                <h3 className="text-xs font-bold text-white/40 uppercase tracking-wide mb-2">Ranking atual</h3>
+                {ranking.slice(0,5).map((r) => (
+                  <div key={r.usuarioId} className="flex items-center justify-between py-2" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 text-center font-black text-sm" style={{color: r.posicao===1?'#F4A81D':r.posicao===2?'#C0C0C0':r.posicao===3?'#CD7F32':'rgba(255,255,255,0.4)'}}>
+                        {r.posicao}º
+                      </span>
+                      <span className="text-sm">{r.nome}</span>
+                    </div>
+                    <span className="font-bold text-sm" style={{color:'#F4A81D'}}>{r.pontos} pts</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Vencedores declarados ou botão de declarar */}
+              {vencedoresDeclarados.length > 0 ? (
+                <div>
+                  <h3 className="text-xs font-bold text-white/40 uppercase tracking-wide mb-2">Vencedores declarados</h3>
+                  {vencedoresDeclarados.map((v) => (
+                    <div key={v.posicao} className="flex items-center justify-between py-3 gap-3" style={{borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                      <div>
+                        <p className="font-bold text-sm">{['🥇','🥈','🥉'][v.posicao-1]} {v.nome}</p>
+                        <p className="text-xs text-white/40">{v.pontos} pts · R$ {v.premioValor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
+                      </div>
+                      {v.premioPago ? (
+                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-500/20 text-green-400">✓ Pago</span>
+                      ) : (
+                        <button
+                          className="btn-copa px-3 py-2 text-xs"
+                          disabled={pagandoVencedor === v.posicao}
+                          onClick={() => pagarVencedor(v.posicao)}
+                        >
+                          {pagandoVencedor === v.posicao ? '⏳' : '💸 Pagar PIX'}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <button className="btn-copa w-full" onClick={declararVencedores}>
+                  🏆 Declarar Vencedores e Distribuir Prêmio
+                </button>
+              )}
+            </>
+          )}
+        </div>}
+
+        {/* ABA: Financeiro */}
+        {abaAdmin === 'financeiro' && <div className="card-copa p-5 mb-5">
           <h2 className="font-bold mb-3" style={{color:'#F4A81D'}}>💰 Financeiro</h2>
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-sm">
@@ -181,19 +363,17 @@ export default function AdminPage() {
                 <p className="text-sm font-medium">{m.nome}</p>
                 <p className="text-xs text-white/30">{m.telefone}</p>
               </div>
-              <div className="flex items-center gap-2">
-                {m.pago ? (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Pago</span>
-                ) : (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">Pendente</span>
-                )}
-              </div>
+              {m.pago ? (
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Pago</span>
+              ) : (
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">Pendente</span>
+              )}
             </div>
           ))}
-        </div>
+        </div>}
 
-        {/* Atualizar placares */}
-        <div className="card-copa p-5">
+        {/* Atualizar placares — dentro de Financeiro */}
+        {abaAdmin === 'financeiro' && <div className="card-copa p-5">
           <h2 className="font-bold mb-1" style={{color:'#F4A81D'}}>⚽ Atualizar Resultados</h2>
           <p className="text-white/40 text-xs mb-4">Informe o placar final dos jogos para calcular a pontuação</p>
 
@@ -244,7 +424,7 @@ export default function AdminPage() {
               ))}
             </div>
           )}
-        </div>
+        </div>}
       </main>
     </div>
   );
