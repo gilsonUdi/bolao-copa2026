@@ -39,7 +39,7 @@ export default function GrupoPage() {
   const [tab, setTab] = useState<Tab>('apostas');
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState<number | null>(null);
-  const [previsoes, setPrevisoes] = useState<Record<number, { casa: string; visitante: string }>>({});
+  const [previsoes, setPrevisoes] = useState<Record<string | number, { casa: string; visitante: string }>>({});
   const [faseAtiva, setFaseAtiva] = useState<string>('Todos');
 
   // Pagamento
