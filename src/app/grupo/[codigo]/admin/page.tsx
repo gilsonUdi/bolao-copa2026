@@ -163,15 +163,14 @@ export default function AdminPage() {
   }
 
   function mensagemWhatsApp() {
-    const totalPago = grupo?.membros.filter(m => m.pago).length || 0;
-    const premioEstimado = ((grupo?.membros.length || 0) * (grupo?.valorAposta || 0) * 0.9).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     const msg = encodeURIComponent(
       `🏆 *Bolão Copa 2026 - ${grupo?.nome}*\n\n` +
-      `⚽ Entre no nosso bolão da Copa!\n` +
-      `💰 Valor: R$ ${grupo?.valorAposta},00 por pessoa\n` +
-      `🎁 Prêmio estimado: R$ ${premioEstimado}\n\n` +
-      `📲 Acesse agora:\n${linkGrupo}\n\n` +
-      `Código do grupo: *${codigo}*`
+      `⚽ Participe do nosso bolão da Copa do Mundo!\n\n` +
+      `💰 *Valor por aposta:* R$ ${grupo?.valorAposta?.toLocaleString('pt-BR', {minimumFractionDigits:2})} por jogo\n` +
+      `📊 *Pontuação:* apenas placar exato conta!\n` +
+      `🏆 *Prêmio:* total arrecadado menos 10% de taxa administrativa\n\n` +
+      `📲 *Acesse agora e faça suas apostas:*\n${linkGrupo}\n\n` +
+      `_Código do grupo: *${codigo}*_`
     );
     window.open(`https://wa.me/?text=${msg}`, '_blank');
   }

@@ -134,14 +134,22 @@ export default function GrupoPage() {
 
   useEffect(() => { carregarDados(); }, [carregarDados]);
 
-  async function salvarAposta(jogo: Jogo) {
-    if (!usuario) return;
+  const [pixAposta, setPixAposta] = useState<{jogoId: number; invoiceUrl: string; pixCopiaECola: string} | null>(null);
+
+  function jogoEstaAberto(jogo: Jogo): boolean {
+    const agora = new Date();
+    const inicio = new Date(jogo.dataHora);
+    return agora < inicio && jogo.status === 'agendado';
+  }
+
+  async function novaAposta(jogo: Jogo) {
+    if (!usuario || !grupo) return;
     const prev = previsoes[jogo.id];
     if (!prev || prev.casa === '' || prev.visitante === '') return;
 
     setSalvando(jogo.id);
     try {
-      await fetch('/api/apostas', {
+      const res = await fetch('/api/apostas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -151,8 +159,44 @@ export default function GrupoPage() {
           jogoId: jogo.id,
           golsCasaPrevisto: Number(prev.casa),
           golsVisitantePrevisto: Number(prev.visitante),
+          cpf: '', // sem CPF aqui — pagamento via aba pagamento separada
         }),
       });
+      const data = await res.json();
+      if (data.cobranca?.invoiceUrl) {
+        setPixAposta({ jogoId: jogo.id, invoiceUrl: data.cobranca.invoiceUrl, pixCopiaECola: data.cobranca.pixCopiaECola });
+      }
+      // Limpa preview após salvar para permitir nova aposta
+      setPrevisoes(p => { const n = {...p}; delete n[jogo.id]; return n; });
+      await carregarDados();
+    } finally {
+      setSalvando(null);
+    }
+  }
+
+  async function editarAposta(aposta: typeof apostas[0]) {
+    if (!usuario) return;
+    const prev = previsoes[`edit_${aposta.id}`];
+    if (!prev || prev.casa === '' || prev.visitante === '') return;
+    setSalvando(aposta.jogoId);
+    try {
+      await fetch('/api/apostas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grupoId: aposta.grupoId,
+          usuarioId: aposta.usuarioId,
+          usuarioNome: aposta.usuarioNome,
+          jogoId: aposta.jogoId,
+          numero: aposta.numero,
+          golsCasaPrevisto: Number(prev.casa),
+          golsVisitantePrevisto: Number(prev.visitante),
+          pago: aposta.pago,
+          criadaEm: aposta.criadaEm,
+          apostaId: aposta.id,
+        }),
+      });
+      setPrevisoes(p => { const n = {...p}; delete n[`edit_${aposta.id}`]; return n; });
       await carregarDados();
     } finally {
       setSalvando(null);
@@ -269,21 +313,19 @@ export default function GrupoPage() {
             </button>
           </form>
 
-          {/* Pontuação */}
+          {/* Pontuação simplificada */}
           <div className="card-copa p-4 mt-4">
-            <h3 className="font-bold text-sm mb-3" style={{color:'#F4A81D'}}>📊 Sistema de Pontuação</h3>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg p-3" style={{background:'rgba(244,168,29,0.1)'}}>
-                <div className="text-2xl font-black" style={{color:'#F4A81D'}}>10</div>
-                <div className="text-white/60 text-xs mt-1">Placar Exato</div>
+            <h3 className="font-bold text-sm mb-3" style={{color:'#F4A81D'}}>📊 Regra de Pontuação</h3>
+            <div className="flex gap-3">
+              <div className="flex-1 rounded-lg p-3 text-center" style={{background:'rgba(244,168,29,0.12)'}}>
+                <div className="text-3xl font-black" style={{color:'#F4A81D'}}>10</div>
+                <div className="text-white font-bold text-xs mt-1">Placar Exato</div>
+                <div className="text-white/40 text-xs">Único jeito de pontuar</div>
               </div>
-              <div className="rounded-lg p-3" style={{background:'rgba(0,154,68,0.1)'}}>
-                <div className="text-2xl font-black" style={{color:'#4ade80'}}>7</div>
-                <div className="text-white/60 text-xs mt-1">Vencedor + Placar</div>
-              </div>
-              <div className="rounded-lg p-3" style={{background:'rgba(255,255,255,0.05)'}}>
-                <div className="text-2xl font-black text-white">5</div>
-                <div className="text-white/60 text-xs mt-1">Só Vencedor</div>
+              <div className="flex-1 rounded-lg p-3 text-center" style={{background:'rgba(255,255,255,0.04)'}}>
+                <div className="text-3xl font-black text-white/25">0</div>
+                <div className="text-white/40 font-bold text-xs mt-1">Qualquer outro</div>
+                <div className="text-white/25 text-xs">Não pontua</div>
               </div>
             </div>
           </div>
@@ -396,9 +438,10 @@ export default function GrupoPage() {
             )}
 
             {jogosFiltrados.map((jogo) => {
-              const apostaFeita = apostas.find((a) => a.jogoId === jogo.id);
+              const apostasJogo = apostas.filter((a) => a.jogoId === jogo.id).sort((a,b) => a.numero - b.numero);
               const prev = previsoes[jogo.id] || { casa: '', visitante: '' };
-              const bloqueado = jogo.status === 'encerrado' || jogo.status === 'ao_vivo';
+              const aberto = jogoEstaAberto(jogo);
+              const bloqueado = !aberto;
 
               return (
                 <div key={jogo.id} className="card-copa mb-4 overflow-hidden animate-slide-up">
@@ -476,36 +519,109 @@ export default function GrupoPage() {
                       <span className="text-white/30 text-xs">{jogo.local}</span>
                     </div>
 
-                    {/* Minha aposta / Botão salvar */}
-                    {!bloqueado && (
-                      <div className="mt-3">
-                        {apostaFeita && (
-                          <p className="text-center text-xs mb-2" style={{color:'#4ade80'}}>
-                            ✅ Aposta salva: {apostaFeita.golsCasaPrevisto} x {apostaFeita.golsVisitantePrevisto}
-                          </p>
-                        )}
-                        <button
-                          className="btn-verde w-full py-2 text-sm"
-                          disabled={salvando === jogo.id || prev.casa === '' || prev.visitante === ''}
-                          onClick={() => salvarAposta(jogo)}
-                        >
-                          {salvando === jogo.id ? '⏳ Salvando...' : apostaFeita ? '✏️ Atualizar Aposta' : '💾 Salvar Aposta'}
-                        </button>
+                    {/* Minhas apostas existentes */}
+                    {apostasJogo.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {apostasJogo.map((ap) => {
+                          const editKey = `edit_${ap.id}`;
+                          const editPrev = previsoes[editKey];
+                          const pts = jogo.status === 'encerrado' ? calcularPontos(ap, jogo) : null;
+                          return (
+                            <div key={ap.id} className="rounded-lg p-2" style={{background:'rgba(0,0,0,0.25)'}}>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-white/40">Aposta #{ap.numero}</span>
+                                <div className="flex items-center gap-2">
+                                  {ap.pago
+                                    ? <span className="text-xs px-1.5 py-0.5 rounded" style={{background:'rgba(74,222,128,0.2)', color:'#4ade80'}}>✓ Pago</span>
+                                    : <span className="text-xs px-1.5 py-0.5 rounded" style={{background:'rgba(251,191,36,0.2)', color:'#fbbf24'}}>Pendente</span>
+                                  }
+                                  {pts !== null && (
+                                    <span className="font-black text-sm" style={{color: pts > 0 ? '#4ade80' : '#f87171'}}>+{pts}pts</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Modo edição (antes do jogo) */}
+                              {aberto && editPrev ? (
+                                <div className="flex items-center gap-2">
+                                  <input type="number" min="0" max="20" className="placar-input" style={{width:50, fontSize:20}}
+                                    value={editPrev.casa}
+                                    onChange={e => setPrevisoes(p => ({...p, [editKey]: {...editPrev, casa: e.target.value}}))} />
+                                  <span className="text-white/30">x</span>
+                                  <input type="number" min="0" max="20" className="placar-input" style={{width:50, fontSize:20}}
+                                    value={editPrev.visitante}
+                                    onChange={e => setPrevisoes(p => ({...p, [editKey]: {...editPrev, visitante: e.target.value}}))} />
+                                  <button className="btn-verde px-3 py-1 text-xs ml-auto" disabled={salvando === jogo.id}
+                                    onClick={() => editarAposta(ap)}>
+                                    {salvando === jogo.id ? '⏳' : '✓ Salvar'}
+                                  </button>
+                                  <button className="text-white/30 text-xs px-2"
+                                    onClick={() => setPrevisoes(p => { const n={...p}; delete n[editKey]; return n; })}>✕</button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-sm">{ap.golsCasaPrevisto} x {ap.golsVisitantePrevisto}</span>
+                                  {aberto && (
+                                    <button className="text-xs text-white/40 hover:text-white/70 transition-colors"
+                                      onClick={() => setPrevisoes(p => ({...p, [editKey]: {casa: String(ap.golsCasaPrevisto), visitante: String(ap.golsVisitantePrevisto)}}))}>
+                                      ✏️ Editar
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
-                    {/* Resultado da aposta em jogo encerrado */}
-                    {jogo.status === 'encerrado' && apostaFeita && (
-                      <div className="mt-3 text-center">
-                        {(() => {
-                          const pts = calcularPontos(apostaFeita, jogo);
-                          return (
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full" style={{ background: pts > 0 ? 'rgba(74,222,128,0.15)' : 'rgba(239,68,68,0.15)' }}>
-                              <span className="text-xs text-white/60">Sua aposta: {apostaFeita.golsCasaPrevisto} x {apostaFeita.golsVisitantePrevisto}</span>
-                              <span className="font-black text-sm" style={{ color: pts > 0 ? '#4ade80' : '#f87171' }}>+{pts} pts</span>
-                            </div>
-                          );
-                        })()}
+                    {/* Nova aposta (só antes do início) */}
+                    {aberto && (
+                      <div className="mt-3">
+                        <p className="text-xs text-white/40 mb-2">
+                          {apostasJogo.length === 0 ? 'Sua aposta:' : `Nova aposta (#${apostasJogo.length + 1}):`}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input type="number" min="0" max="20" className="placar-input"
+                            value={prev.casa}
+                            onChange={(e) => setPrevisoes((p) => ({ ...p, [jogo.id]: { ...prev, casa: e.target.value } }))} />
+                          <span className="text-white/30 font-bold text-xl">x</span>
+                          <input type="number" min="0" max="20" className="placar-input"
+                            value={prev.visitante}
+                            onChange={(e) => setPrevisoes((p) => ({ ...p, [jogo.id]: { ...prev, visitante: e.target.value } }))} />
+                          <button
+                            className="btn-verde px-4 py-2 text-sm ml-auto"
+                            disabled={salvando === jogo.id || prev.casa === '' || prev.visitante === ''}
+                            onClick={() => novaAposta(jogo)}
+                          >
+                            {salvando === jogo.id ? '⏳' : apostasJogo.length === 0 ? '💾 Apostar' : '➕ Nova Aposta'}
+                          </button>
+                        </div>
+                        {apostasJogo.length > 0 && grupo && (
+                          <p className="text-xs mt-1.5" style={{color:'#fbbf24'}}>
+                            ⚠️ Cada nova aposta = R$ {grupo.valorAposta.toLocaleString('pt-BR',{minimumFractionDigits:2})} adicional
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Aviso de jogo travado */}
+                    {bloqueado && apostasJogo.length === 0 && jogo.status !== 'encerrado' && (
+                      <div className="mt-3 text-center py-2">
+                        <p className="text-white/30 text-xs">🔒 Apostas encerradas — jogo iniciou</p>
+                      </div>
+                    )}
+
+                    {/* PIX gerado para aposta */}
+                    {pixAposta?.jogoId === jogo.id && (
+                      <div className="mt-3 p-3 rounded-lg" style={{background:'rgba(244,168,29,0.1)', border:'1px solid rgba(244,168,29,0.3)'}}>
+                        <p className="text-xs font-bold mb-2" style={{color:'#F4A81D'}}>💳 Pague sua aposta:</p>
+                        <a href={pixAposta.invoiceUrl} target="_blank" rel="noopener noreferrer"
+                          className="btn-copa block text-center text-sm" style={{textDecoration:'none', padding:10, borderRadius:8}}>
+                          🔗 Abrir PIX
+                        </a>
+                        <button className="text-white/30 text-xs w-full text-center mt-2"
+                          onClick={() => setPixAposta(null)}>Fechar</button>
                       </div>
                     )}
                   </div>

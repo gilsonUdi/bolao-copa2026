@@ -65,8 +65,12 @@ export interface Aposta {
   usuarioId: string;
   usuarioNome: string;
   jogoId: number;
+  numero: number;        // nº da aposta: 1, 2, 3...
   golsCasaPrevisto: number;
   golsVisitantePrevisto: number;
+  pago: boolean;         // pagamento desta aposta confirmado
+  asaasPaymentId?: string;
+  asaasInvoiceUrl?: string;
   pontos?: number;
   criadaEm: Date;
   atualizadaEm: Date;

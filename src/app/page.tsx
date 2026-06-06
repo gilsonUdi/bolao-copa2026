@@ -156,11 +156,6 @@ export default function Home() {
                     step="0.01"
                   />
                 </div>
-                {Number(valorAposta) > 0 && (
-                  <p className="text-xs mt-1" style={{color:'#4ade80'}}>
-                    💰 Prêmio estimado com 10 participantes: R$ {(Number(valorAposta) * 10 * 0.9).toLocaleString('pt-BR', {minimumFractionDigits:2})}
-                  </p>
-                )}
               </div>
 
               <div>
@@ -227,19 +222,17 @@ export default function Home() {
 
           {/* Pontuação */}
           <div className="card-copa p-4 mt-4">
-            <h3 className="font-bold text-sm mb-3" style={{color:'#F4A81D'}}>📊 Sistema de Pontuação</h3>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg p-3" style={{background:'rgba(244,168,29,0.1)'}}>
-                <div className="text-3xl font-black" style={{color:'#F4A81D'}}>10</div>
-                <div className="text-white/60 text-xs mt-1">Placar<br/>Exato</div>
+            <h3 className="font-bold text-sm mb-3" style={{color:'#F4A81D'}}>📊 Regra de Pontuação</h3>
+            <div className="flex gap-3">
+              <div className="flex-1 rounded-lg p-4 text-center" style={{background:'rgba(244,168,29,0.12)'}}>
+                <div className="text-4xl font-black" style={{color:'#F4A81D'}}>10</div>
+                <div className="text-white font-bold text-sm mt-1">Placar Exato</div>
+                <div className="text-white/50 text-xs mt-1">Único jeito de pontuar</div>
               </div>
-              <div className="rounded-lg p-3" style={{background:'rgba(0,154,68,0.1)'}}>
-                <div className="text-3xl font-black" style={{color:'#4ade80'}}>7</div>
-                <div className="text-white/60 text-xs mt-1">Vencedor<br/>+ Placar</div>
-              </div>
-              <div className="rounded-lg p-3" style={{background:'rgba(255,255,255,0.05)'}}>
-                <div className="text-3xl font-black text-white">5</div>
-                <div className="text-white/60 text-xs mt-1">Só<br/>Vencedor</div>
+              <div className="flex-1 rounded-lg p-4 text-center" style={{background:'rgba(239,68,68,0.08)'}}>
+                <div className="text-4xl font-black text-white/30">0</div>
+                <div className="text-white/50 font-bold text-sm mt-1">Qualquer outro</div>
+                <div className="text-white/30 text-xs mt-1">Não pontua</div>
               </div>
             </div>
           </div>

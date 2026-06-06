@@ -80,13 +80,34 @@ export async function entrarNoGrupo(codigo: string, membro: Omit<MembroGrupo, 'e
 }
 
 export async function salvarAposta(aposta: Omit<Aposta, 'id' | 'pontos'>): Promise<string> {
-  const id = `${aposta.grupoId}_${aposta.usuarioId}_${aposta.jogoId}`;
+  // ID único por número de aposta — permite múltiplas por jogo
+  const id = `${aposta.grupoId}_${aposta.usuarioId}_${aposta.jogoId}_${aposta.numero}`;
   await setDoc(doc(db, 'apostas', id), {
     ...aposta,
     criadaEm: Timestamp.fromDate(aposta.criadaEm),
     atualizadaEm: Timestamp.fromDate(aposta.atualizadaEm),
   }, { merge: true });
   return id;
+}
+
+export async function contarApostasJogo(grupoId: string, usuarioId: string, jogoId: number): Promise<number> {
+  const q = query(
+    collection(db, 'apostas'),
+    where('grupoId', '==', grupoId),
+    where('usuarioId', '==', usuarioId),
+    where('jogoId', '==', jogoId),
+  );
+  const snap = await getDocs(q);
+  return snap.size;
+}
+
+export async function marcarApostaPaga(apostaId: string, paymentId: string, invoiceUrl: string): Promise<void> {
+  await setDoc(doc(db, 'apostas', apostaId), {
+    pago: true,
+    asaasPaymentId: paymentId,
+    asaasInvoiceUrl: invoiceUrl,
+    atualizadaEm: Timestamp.fromDate(new Date()),
+  }, { merge: true });
 }
 
 export async function buscarApostasGrupo(grupoId: string): Promise<Aposta[]> {
