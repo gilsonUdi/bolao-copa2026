@@ -313,22 +313,6 @@ export default function GrupoPage() {
             </button>
           </form>
 
-          {/* Pontuação simplificada */}
-          <div className="card-copa p-4 mt-4">
-            <h3 className="font-bold text-sm mb-3" style={{color:'#F4A81D'}}>📊 Regra de Pontuação</h3>
-            <div className="flex gap-3">
-              <div className="flex-1 rounded-lg p-3 text-center" style={{background:'rgba(244,168,29,0.12)'}}>
-                <div className="text-3xl font-black" style={{color:'#F4A81D'}}>10</div>
-                <div className="text-white font-bold text-xs mt-1">Placar Exato</div>
-                <div className="text-white/40 text-xs">Único jeito de pontuar</div>
-              </div>
-              <div className="flex-1 rounded-lg p-3 text-center" style={{background:'rgba(255,255,255,0.04)'}}>
-                <div className="text-3xl font-black text-white/25">0</div>
-                <div className="text-white/40 font-bold text-xs mt-1">Qualquer outro</div>
-                <div className="text-white/25 text-xs">Não pontua</div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     );
