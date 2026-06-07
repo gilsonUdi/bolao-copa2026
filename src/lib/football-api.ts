@@ -85,7 +85,7 @@ export async function buscarJogosCopa(): Promise<Jogo[]> {
 // Horários em BRT (UTC-3). Fontes: FIFA, ESPN, FOX Sports, NBC Sports
 // Grupos: A=México/África do Sul/Coreia/Tchéquia | B=Canadá/Bósnia/Catar/Suíça
 //         C=Brasil/Marrocos/Haiti/Escócia | D=EUA/Paraguai/Austrália/Turquia
-//         E=Alemanha/Curaçao/Costa do Marfim/Equador | F=Países Baixos/Japão/Suécia/Tunísia
+//         E=Alemanha/Curaçao/Costa do Marfim/Equador | F=Holanda/Japão/Suécia/Tunísia
 //         G=Bélgica/Egito/Irã/Nova Zelândia | H=Espanha/Cabo Verde/Arábia Saudita/Uruguai
 //         I=França/Senegal/Iraque/Noruega | J=Argentina/Argélia/Áustria/Jordânia
 //         K=Portugal/RD Congo/Uzbequistão/Colômbia | L=Inglaterra/Croácia/Gana/Panamá
@@ -108,7 +108,7 @@ function jogosEstaticos(): Jogo[] {
     // 14/06
     { fase:'Fase de Grupos', grupo:'Grupo D', timeCasa:'Austrália', timeVisitante:'Turquia', dataHora:'2026-06-14T01:00:00-03:00', local:'BC Place, Vancouver', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Alemanha', timeVisitante:'Curaçao', dataHora:'2026-06-14T14:00:00-03:00', local:'NRG Stadium, Houston', status:'agendado' },
-    { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Países Baixos', timeVisitante:'Japão', dataHora:'2026-06-14T17:00:00-03:00', local:'AT&T Stadium, Arlington', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Holanda', timeVisitante:'Japão', dataHora:'2026-06-14T17:00:00-03:00', local:'AT&T Stadium, Arlington', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Costa do Marfim', timeVisitante:'Equador', dataHora:'2026-06-14T20:00:00-03:00', local:'Lincoln Financial Field, Philadelphia', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Suécia', timeVisitante:'Tunísia', dataHora:'2026-06-14T23:00:00-03:00', local:'Estadio Akron, Zapopan', status:'agendado' },
     // 15/06
@@ -139,7 +139,7 @@ function jogosEstaticos(): Jogo[] {
     { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'Brasil', timeVisitante:'Haiti', dataHora:'2026-06-19T19:00:00-03:00', local:'MetLife Stadium, East Rutherford', status:'agendado' },
     // 20/06
     { fase:'Fase de Grupos', grupo:'Grupo D', timeCasa:'Turquia', timeVisitante:'Paraguai', dataHora:'2026-06-20T01:00:00-03:00', local:'Levi\'s Stadium, Santa Clara', status:'agendado' },
-    { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Países Baixos', timeVisitante:'Suécia', dataHora:'2026-06-20T14:00:00-03:00', local:'NRG Stadium, Houston', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Holanda', timeVisitante:'Suécia', dataHora:'2026-06-20T14:00:00-03:00', local:'NRG Stadium, Houston', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Alemanha', timeVisitante:'Costa do Marfim', dataHora:'2026-06-20T17:00:00-03:00', local:'BMO Field, Toronto', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Equador', timeVisitante:'Curaçao', dataHora:'2026-06-20T21:00:00-03:00', local:'Arrowhead Stadium, Kansas City', status:'agendado' },
     // 21/06
@@ -172,7 +172,7 @@ function jogosEstaticos(): Jogo[] {
     { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'Marrocos', timeVisitante:'Haiti', dataHora:'2026-06-26T19:00:00-03:00', local:'Gillette Stadium, Foxborough', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Alemanha', timeVisitante:'Equador', dataHora:'2026-06-26T16:00:00-03:00', local:'AT&T Stadium, Arlington', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Curaçao', timeVisitante:'Costa do Marfim', dataHora:'2026-06-26T16:00:00-03:00', local:'Hard Rock Stadium, Miami', status:'agendado' },
-    { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Países Baixos', timeVisitante:'Tunísia', dataHora:'2026-06-26T22:00:00-03:00', local:'Lincoln Financial Field, Philadelphia', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Holanda', timeVisitante:'Tunísia', dataHora:'2026-06-26T22:00:00-03:00', local:'Lincoln Financial Field, Philadelphia', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Japão', timeVisitante:'Suécia', dataHora:'2026-06-26T22:00:00-03:00', local:'Lumen Field, Seattle', status:'agendado' },
     // 27/06
     { fase:'Fase de Grupos', grupo:'Grupo G', timeCasa:'Bélgica', timeVisitante:'Nova Zelândia', dataHora:'2026-06-27T16:00:00-03:00', local:'Mercedes-Benz Stadium, Atlanta', status:'agendado' },
