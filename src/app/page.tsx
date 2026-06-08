@@ -51,7 +51,7 @@ export default function Home() {
     e.preventDefault();
     const codigo = codigoGrupo.toUpperCase().trim();
     if (!codigo) return;
-    router.push(`/grupo/${codigo}`);
+    router.push(`/grupo/${codigo}?identificar=1`);
   }
 
   return (

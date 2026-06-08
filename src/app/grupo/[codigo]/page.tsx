@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Grupo, Jogo, Aposta, Ranking } from '@/types';
 import { calcularPontos } from '@/lib/pontuacao';
 import { EMOJI_BANDEIRAS } from '@/lib/paises';
@@ -34,7 +34,9 @@ function StatusBadge({ status }: { status: Jogo['status'] }) {
 export default function GrupoPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const codigo = params.codigo as string;
+  const forcarIdentificacao = searchParams.get('identificar') === '1';
 
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [grupo, setGrupo] = useState<Grupo | null>(null);
@@ -66,17 +68,24 @@ export default function GrupoPage() {
   const [grupoPreview, setGrupoPreview] = useState<{nome:string; valorAposta:number} | null>(null);
 
   useEffect(() => {
+    // Se veio da home via código, sempre mostra o formulário de identificação
+    if (forcarIdentificacao) {
+      fetch(`/api/grupos?codigo=${codigo}`)
+        .then(r => r.json())
+        .then(d => { if (d.grupo) setGrupoPreview({ nome: d.grupo.nome, valorAposta: d.grupo.valorAposta }); })
+        .catch(() => {});
+      return;
+    }
     const u = localStorage.getItem('bolao_usuario');
     if (u) {
       setUsuario(JSON.parse(u));
     } else {
-      // Busca só o preview do grupo para mostrar na tela de entrada
       fetch(`/api/grupos?codigo=${codigo}`)
         .then(r => r.json())
         .then(d => { if (d.grupo) setGrupoPreview({ nome: d.grupo.nome, valorAposta: d.grupo.valorAposta }); })
         .catch(() => {});
     }
-  }, [codigo]);
+  }, [codigo, forcarIdentificacao]);
 
   async function entrarNoGrupo(e: React.FormEvent) {
     e.preventDefault();
@@ -98,6 +107,8 @@ export default function GrupoPage() {
       const novoUsuario = { id: usuarioId, nome: nomeEntrada, telefone: telefoneEntrada };
       localStorage.setItem('bolao_usuario', JSON.stringify(novoUsuario));
       setUsuario(novoUsuario);
+      // Remove o parâmetro ?identificar=1 da URL sem recarregar
+      router.replace(`/grupo/${codigo}`, { scroll: false });
     } catch (err: unknown) {
       setErroEntrada(err instanceof Error ? err.message : 'Erro ao entrar no grupo');
     } finally {
