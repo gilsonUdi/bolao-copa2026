@@ -47,38 +47,37 @@ function mapStage(stage: string): string {
 }
 
 export async function buscarJogosCopa(): Promise<Jogo[]> {
-  try {
-    const res = await fetch(`${BASE_URL}/competitions/${WC_2026_ID}/matches`, {
-      headers: { 'X-Auth-Token': API_KEY || '' },
-      next: { revalidate: 300 }, // cache 5 min
-    });
-
-    if (!res.ok) {
-      console.error('Football API error:', res.status, await res.text());
-      return jogosEstaticos();
+  // A API externa requer plano pago para Copa 2026.
+  // Usamos o calendário estático completo; placares são gerenciados pelo admin.
+  if (API_KEY) {
+    try {
+      const res = await fetch(`${BASE_URL}/competitions/${WC_2026_ID}/matches`, {
+        headers: { 'X-Auth-Token': API_KEY },
+        next: { revalidate: 300 },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const matches: FDMatch[] = data.matches || [];
+        return matches.map((m) => ({
+          id: m.id,
+          fase: mapStage(m.stage),
+          grupo: m.group?.replace('GROUP_', 'Grupo '),
+          timeCasa: m.homeTeam.name,
+          timeVisitante: m.awayTeam.name,
+          bandeiraCasa: m.homeTeam.crest || '',
+          bandeiraVisitante: m.awayTeam.crest || '',
+          dataHora: m.utcDate,
+          local: m.venue || 'A confirmar',
+          golsCasa: m.score.fullTime.home ?? undefined,
+          golsVisitante: m.score.fullTime.away ?? undefined,
+          status: mapStatus(m.status),
+        }));
+      }
+    } catch {
+      // silencioso — cai no estático abaixo
     }
-
-    const data = await res.json();
-    const matches: FDMatch[] = data.matches || [];
-
-    return matches.map((m) => ({
-      id: m.id,
-      fase: mapStage(m.stage),
-      grupo: m.group?.replace('GROUP_', 'Grupo '),
-      timeCasa: m.homeTeam.name,
-      timeVisitante: m.awayTeam.name,
-      bandeiraCasa: m.homeTeam.crest || '',
-      bandeiraVisitante: m.awayTeam.crest || '',
-      dataHora: m.utcDate,
-      local: m.venue || 'A confirmar',
-      golsCasa: m.score.fullTime.home ?? undefined,
-      golsVisitante: m.score.fullTime.away ?? undefined,
-      status: mapStatus(m.status),
-    }));
-  } catch (err) {
-    console.error('Erro ao buscar jogos:', err);
-    return jogosEstaticos();
   }
+  return jogosEstaticos();
 }
 
 // Calendário real da fase de grupos da Copa 2026
