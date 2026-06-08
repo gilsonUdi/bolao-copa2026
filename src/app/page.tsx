@@ -21,8 +21,6 @@ export default function Home() {
 
   // Entrar no grupo
   const [codigoGrupo, setCodigoGrupo] = useState('');
-  const [membroNome, setMembroNome] = useState('');
-  const [membroTelefone, setMembroTelefone] = useState('');
 
   async function criarGrupo(e: React.FormEvent) {
     e.preventDefault();
@@ -57,24 +55,6 @@ export default function Home() {
       const codigo = codigoGrupo.toUpperCase().trim();
       const res = await fetch(`/api/grupos?codigo=${codigo}`);
       if (!res.ok) throw new Error('Grupo não encontrado. Verifique o código.');
-
-      const data = await res.json();
-      const usuarioId = `user_${membroTelefone.replace(/\D/g, '')}`;
-      const jaMembro = data.grupo.membros?.find((m: { usuarioId: string }) => m.usuarioId === usuarioId);
-
-      if (!jaMembro) {
-        await fetch(`/api/grupos/${codigo}/membros`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuarioId, nome: membroNome, telefone: membroTelefone }),
-        });
-      }
-
-      localStorage.setItem('bolao_usuario', JSON.stringify({
-        id: usuarioId,
-        nome: membroNome,
-        telefone: membroTelefone,
-      }));
       router.push(`/grupo/${codigo}`);
     } catch (err: unknown) {
       setErro(err instanceof Error ? err.message : 'Erro ao entrar no grupo');
@@ -200,16 +180,6 @@ export default function Home() {
                   onChange={e => setCodigoGrupo(e.target.value.toUpperCase())}
                   required
                 />
-              </div>
-
-              <div>
-                <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Seu Nome *</label>
-                <input className="input-copa" placeholder="Seu nome completo" value={membroNome} onChange={e => setMembroNome(e.target.value)} required />
-              </div>
-
-              <div>
-                <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Seu WhatsApp *</label>
-                <input className="input-copa" placeholder="(11) 99999-9999" value={membroTelefone} onChange={e => setMembroTelefone(e.target.value)} required type="tel" />
               </div>
 
               {erro && <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg p-2">{erro}</p>}
