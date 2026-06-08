@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 
 type Tab = 'criar' | 'entrar';
 
+function mascaraTelefone(v: string): string {
+  const n = v.replace(/\D/g, '').slice(0, 11);
+  if (n.length <= 2) return n.length ? `(${n}` : '';
+  if (n.length <= 7) return `(${n.slice(0,2)}) ${n.slice(2)}`;
+  return `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}`;
+}
+
 export default function Home() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('criar');
@@ -109,7 +116,7 @@ export default function Home() {
 
               <div>
                 <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Seu WhatsApp *</label>
-                <input className="input-copa" placeholder="(11) 99999-9999" value={adminTelefone} onChange={e => setAdminTelefone(e.target.value)} required type="tel" />
+                <input className="input-copa" placeholder="(11) 99999-9999" value={adminTelefone} onChange={e => setAdminTelefone(mascaraTelefone(e.target.value))} required type="tel" />
               </div>
 
               <div>

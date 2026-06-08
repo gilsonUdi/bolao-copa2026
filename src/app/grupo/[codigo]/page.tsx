@@ -6,6 +6,21 @@ import { Grupo, Jogo, Aposta, Ranking } from '@/types';
 import { calcularPontos } from '@/lib/pontuacao';
 import { EMOJI_BANDEIRAS } from '@/lib/paises';
 
+function mascaraTelefone(v: string): string {
+  const n = v.replace(/\D/g, '').slice(0, 11);
+  if (n.length <= 2) return n.length ? `(${n}` : '';
+  if (n.length <= 7) return `(${n.slice(0,2)}) ${n.slice(2)}`;
+  return `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}`;
+}
+
+function mascaraCPF(v: string): string {
+  const n = v.replace(/\D/g, '').slice(0, 11);
+  if (n.length <= 3) return n;
+  if (n.length <= 6) return `${n.slice(0,3)}.${n.slice(3)}`;
+  if (n.length <= 9) return `${n.slice(0,3)}.${n.slice(3,6)}.${n.slice(6)}`;
+  return `${n.slice(0,3)}.${n.slice(3,6)}.${n.slice(6,9)}-${n.slice(9)}`;
+}
+
 type Tab = 'apostas' | 'ranking' | 'pagamento';
 
 interface Usuario { id: string; nome: string; telefone: string; }
@@ -315,7 +330,7 @@ export default function GrupoPage() {
                 placeholder="(11) 99999-9999"
                 type="tel"
                 value={telefoneEntrada}
-                onChange={e => setTelefoneEntrada(e.target.value)}
+                onChange={e => setTelefoneEntrada(mascaraTelefone(e.target.value))}
                 required
               />
             </div>
@@ -742,7 +757,7 @@ export default function GrupoPage() {
                 <form onSubmit={gerarPix} className="flex flex-col gap-4">
                   <div>
                     <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">CPF *</label>
-                    <input className="input-copa" placeholder="000.000.000-00" value={cpf} onChange={e => setCpf(e.target.value)} required />
+                    <input className="input-copa" placeholder="000.000.000-00" value={cpf} onChange={e => setCpf(mascaraCPF(e.target.value))} required />
                   </div>
                   <div>
                     <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">E-mail (opcional)</label>
