@@ -17,13 +17,18 @@ function formatarData(iso: string) {
 
 function StatusBadge({ status }: { status: Jogo['status'] }) {
   const map = {
-    agendado: { label: 'Agendado', color: '#94a3b8' },
-    ao_vivo: { label: '🔴 Ao Vivo', color: '#f87171' },
-    encerrado: { label: 'Encerrado', color: '#4ade80' },
-    adiado: { label: 'Adiado', color: '#fbbf24' },
+    agendado: { label: 'Agendado', color: '#94a3b8', dot: false },
+    ao_vivo: { label: 'Ao Vivo', color: '#f87171', dot: true },
+    encerrado: { label: 'Encerrado', color: '#4ade80', dot: false },
+    adiado: { label: 'Adiado', color: '#fbbf24', dot: false },
   };
   const s = map[status];
-  return <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{background:`${s.color}20`, color: s.color}}>{s.label}</span>;
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full" style={{background:`${s.color}20`, color: s.color}}>
+      {s.dot && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}
+      {s.label}
+    </span>
+  );
 }
 
 export default function GrupoPage() {
@@ -309,7 +314,7 @@ export default function GrupoPage() {
             )}
 
             <button type="submit" className="btn-copa" disabled={entrando || !nomeEntrada || !telefoneEntrada}>
-              {entrando ? '⏳ Entrando...' : '🏆 Entrar no Bolão'}
+              {entrando ? 'Entrando...' : 'Entrar no Bolão'}
             </button>
           </form>
 
@@ -373,7 +378,7 @@ export default function GrupoPage() {
       <div className="sticky top-[60px] z-10 px-4" style={{background:'rgba(13,31,60,0.95)', borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
         <div className="max-w-2xl mx-auto flex">
           {(['apostas','ranking','pagamento'] as Tab[]).map((t) => {
-            const labels = { apostas: '⚽ Apostas', ranking: '🏆 Ranking', pagamento: '💳 Pagamento' };
+            const labels = { apostas: 'Apostas', ranking: 'Ranking', pagamento: 'Pagamento' };
             return (
               <button
                 key={t}
@@ -537,10 +542,10 @@ export default function GrupoPage() {
                                     onChange={e => setPrevisoes(p => ({...p, [editKey]: {...editPrev, visitante: e.target.value}}))} />
                                   <button className="btn-verde px-3 py-1 text-xs ml-auto" disabled={salvando === jogo.id}
                                     onClick={() => editarAposta(ap)}>
-                                    {salvando === jogo.id ? '⏳' : '✓ Salvar'}
+                                    {salvando === jogo.id ? 'Salvando...' : 'Salvar'}
                                   </button>
                                   <button className="text-white/30 text-xs px-2"
-                                    onClick={() => setPrevisoes(p => { const n={...p}; delete n[editKey]; return n; })}>✕</button>
+                                    onClick={() => setPrevisoes(p => { const n={...p}; delete n[editKey]; return n; })}>×</button>
                                 </div>
                               ) : (
                                 <div className="flex items-center justify-between">
@@ -548,7 +553,7 @@ export default function GrupoPage() {
                                   {aberto && (
                                     <button className="text-xs text-white/40 hover:text-white/70 transition-colors"
                                       onClick={() => setPrevisoes(p => ({...p, [editKey]: {casa: String(ap.golsCasaPrevisto), visitante: String(ap.golsVisitantePrevisto)}}))}>
-                                      ✏️ Editar
+                                      Editar
                                     </button>
                                   )}
                                 </div>
@@ -578,7 +583,7 @@ export default function GrupoPage() {
                             disabled={salvando === jogo.id || prev.casa === '' || prev.visitante === ''}
                             onClick={() => novaAposta(jogo)}
                           >
-                            {salvando === jogo.id ? '⏳' : apostasJogo.length === 0 ? '💾 Apostar' : '➕ Nova Aposta'}
+                            {salvando === jogo.id ? 'Salvando...' : apostasJogo.length === 0 ? 'Apostar' : '+ Nova Aposta'}
                           </button>
                         </div>
                         {apostasJogo.length > 0 && grupo && (
@@ -638,7 +643,7 @@ export default function GrupoPage() {
                 style={r.usuarioId === usuario?.id ? {borderColor:'rgba(244,168,29,0.4)'} : {}}>
                 <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-lg flex-shrink-0"
                   style={{ background: r.posicao === 1 ? '#F4A81D' : r.posicao === 2 ? '#C0C0C0' : r.posicao === 3 ? '#CD7F32' : 'rgba(255,255,255,0.1)', color: r.posicao <= 3 ? '#0D1F3C' : 'white' }}>
-                  {r.posicao <= 3 ? ['🥇','🥈','🥉'][r.posicao-1] : r.posicao}
+                  {r.posicao}
                 </div>
                 <div className="flex-1">
                   <p className="font-bold">{r.nome} {r.usuarioId === usuario?.id && <span className="text-xs text-white/40">(você)</span>}</p>
@@ -653,7 +658,6 @@ export default function GrupoPage() {
 
             {ranking.every(r => r.pontos === 0) && (
               <div className="text-center py-8 text-white/40">
-                <div className="text-3xl mb-2">⏳</div>
                 <p>O ranking será atualizado conforme os jogos forem encerrados</p>
               </div>
             )}
@@ -671,13 +675,17 @@ export default function GrupoPage() {
 
               {jaPagou ? (
                 <div className="text-center py-4">
-                  <div className="text-4xl mb-2">✅</div>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style={{background:'rgba(74,222,128,0.15)'}}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
                   <p className="font-bold" style={{color:'#4ade80'}}>Pagamento confirmado!</p>
                   <p className="text-white/40 text-sm mt-1">Você está participando do bolão</p>
                 </div>
               ) : pixData ? (
                 <div className="text-center">
-                  <p className="font-bold mb-3" style={{color:'#4ade80'}}>✅ Cobrança gerada!</p>
+                  <p className="font-bold mb-3" style={{color:'#4ade80'}}>Cobrança gerada!</p>
                   <p className="text-white/60 text-sm mb-4">
                     Valor: <strong className="text-white">R$ {pixData.valor?.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>
                   </p>
@@ -702,8 +710,11 @@ export default function GrupoPage() {
                       <div className="p-3 rounded-lg text-xs text-left break-all mb-2" style={{background:'rgba(0,0,0,0.3)', color:'rgba(255,255,255,0.6)'}}>
                         {pixData.pixCopiaECola.substring(0,80)}...
                       </div>
-                      <button className="btn-verde w-full" onClick={() => { navigator.clipboard.writeText(pixData.pixCopiaECola); alert('Código PIX copiado!'); }}>
-                        📋 Copiar Código PIX
+                      <button className="btn-verde w-full flex items-center justify-center gap-2" onClick={() => { navigator.clipboard.writeText(pixData.pixCopiaECola); alert('Código PIX copiado!'); }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
+                          <rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                        </svg>
+                        Copiar Código PIX
                       </button>
                     </div>
                   )}
@@ -712,7 +723,7 @@ export default function GrupoPage() {
                   {pixData.invoiceUrl && (
                     <a href={pixData.invoiceUrl} target="_blank" rel="noopener noreferrer"
                       className="btn-copa block mt-3 text-center" style={{textDecoration:'none', padding:'12px', borderRadius:8}}>
-                      🔗 Abrir fatura para pagar
+                      Abrir fatura para pagar
                     </a>
                   )}
                 </div>
@@ -729,7 +740,7 @@ export default function GrupoPage() {
 
                   {/* Chave PIX para receber prêmio */}
                   <div className="p-3 rounded-lg" style={{background:'rgba(244,168,29,0.08)', border:'1px solid rgba(244,168,29,0.2)'}}>
-                    <p className="text-xs font-bold mb-2" style={{color:'#F4A81D'}}>🏆 Chave PIX para receber prêmio</p>
+                    <p className="text-xs font-bold mb-2" style={{color:'#F4A81D'}}>Chave PIX para receber prêmio</p>
                     <div className="flex gap-2 mb-2">
                       {(['CPF','PHONE','EMAIL','EVP'] as const).map(tipo => (
                         <button key={tipo} type="button"
@@ -760,7 +771,7 @@ export default function GrupoPage() {
 
                   {erroPag && <p className="text-red-400 text-sm bg-red-500/10 rounded p-2 text-center">{erroPag}</p>}
                   <button type="submit" className="btn-copa" disabled={gerandoPix || !chavePix}>
-                    {gerandoPix ? '⏳ Gerando PIX...' : '💳 Gerar PIX para Pagamento'}
+                    {gerandoPix ? 'Gerando PIX...' : 'Gerar Pagamento PIX'}
                   </button>
                 </form>
               )}

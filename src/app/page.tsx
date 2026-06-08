@@ -116,7 +116,7 @@ export default function Home() {
                   : { background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.4)' }
                 }
               >
-                {t === 'criar' ? '🏆 Criar Grupo' : '🔗 Entrar com Código'}
+                {t === 'criar' ? 'Criar Grupo' : 'Entrar com Código'}
               </button>
             ))}
           </div>
@@ -164,7 +164,7 @@ export default function Home() {
               </div>
 
               <div>
-                <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">🔐 Senha do Admin *</label>
+                <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Senha do Admin *</label>
                 <input
                   className="input-copa"
                   type="password"
@@ -180,7 +180,7 @@ export default function Home() {
               {erro && <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg p-2">{erro}</p>}
 
               <button type="submit" className="btn-copa mt-2" disabled={loading}>
-                {loading ? '⏳ Criando...' : '🚀 Criar Grupo e Gerar Link'}
+                {loading ? 'Criando...' : 'Criar Grupo'}
               </button>
             </form>
           )}
@@ -215,7 +215,7 @@ export default function Home() {
               {erro && <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg p-2">{erro}</p>}
 
               <button type="submit" className="btn-copa mt-2" disabled={loading}>
-                {loading ? '⏳ Entrando...' : '⚽ Entrar no Bolão'}
+                {loading ? 'Entrando...' : 'Entrar no Bolão'}
               </button>
             </form>
           )}
