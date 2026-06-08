@@ -47,20 +47,11 @@ export default function Home() {
     }
   }
 
-  async function entrarGrupo(e: React.FormEvent) {
+  function entrarGrupo(e: React.FormEvent) {
     e.preventDefault();
-    setErro('');
-    setLoading(true);
-    try {
-      const codigo = codigoGrupo.toUpperCase().trim();
-      const res = await fetch(`/api/grupos?codigo=${codigo}`);
-      if (!res.ok) throw new Error('Grupo não encontrado. Verifique o código.');
-      router.push(`/grupo/${codigo}`);
-    } catch (err: unknown) {
-      setErro(err instanceof Error ? err.message : 'Erro ao entrar no grupo');
-    } finally {
-      setLoading(false);
-    }
+    const codigo = codigoGrupo.toUpperCase().trim();
+    if (!codigo) return;
+    router.push(`/grupo/${codigo}`);
   }
 
   return (
@@ -182,10 +173,8 @@ export default function Home() {
                 />
               </div>
 
-              {erro && <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg p-2">{erro}</p>}
-
-              <button type="submit" className="btn-copa mt-2" disabled={loading}>
-                {loading ? 'Entrando...' : 'Entrar no Bolão'}
+              <button type="submit" className="btn-copa mt-2">
+                Entrar no Bolão
               </button>
             </form>
           )}
