@@ -61,12 +61,12 @@ export async function buscarGrupo(codigo: string): Promise<Grupo | null> {
   const data = snap.data();
   return {
     ...data,
-    jogosAtivos: data.jogosAtivos ?? [],   // garante default para grupos antigos
+    jogosAtivos: data.jogosAtivos ?? [],
     vencedores: data.vencedores ?? [],
-    criadoEm: data.criadoEm.toDate(),
-    membros: data.membros.map((m: MembroGrupo & { entradaEm: Timestamp }) => ({
+    criadoEm: data.criadoEm?.toDate?.() ?? new Date(),
+    membros: (data.membros ?? []).map((m: MembroGrupo & { entradaEm: Timestamp }) => ({
       ...m,
-      entradaEm: (m.entradaEm as unknown as Timestamp).toDate(),
+      entradaEm: (m.entradaEm as unknown as Timestamp)?.toDate?.() ?? new Date(),
     })),
   } as Grupo;
 }
