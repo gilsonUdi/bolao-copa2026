@@ -48,7 +48,7 @@ export default function AdminPage() {
   const carregarDados = useCallback(async () => {
     try {
       const [gRes, jRes, rRes] = await Promise.all([
-        fetch(`/api/grupos?codigo=${codigo}`),
+        fetch(`/api/grupos?codigo=${codigo}&admin=1`),
         fetch('/api/jogos'),
         fetch(`/api/admin/vencedores?grupoId=grupo_${codigo}`),
       ]);

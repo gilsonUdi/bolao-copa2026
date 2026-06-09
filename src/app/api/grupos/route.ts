@@ -31,12 +31,26 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const codigo = req.nextUrl.searchParams.get('codigo');
+  const admin = req.nextUrl.searchParams.get('admin') === '1'; // flag passada só pelo painel admin
   if (!codigo) return NextResponse.json({ error: 'Código obrigatório' }, { status: 400 });
 
   try {
     const grupo = await buscarGrupo(codigo);
     if (!grupo) return NextResponse.json({ error: 'Grupo não encontrado' }, { status: 404 });
-    return NextResponse.json({ grupo });
+
+    // Para membros comuns: remove dados sensíveis de outros membros (chavePix, CPF, etc.)
+    const grupoFiltrado = admin ? grupo : {
+      ...grupo,
+      senhaAdmin: undefined,
+      membros: grupo.membros.map(m => ({
+        usuarioId: m.usuarioId,
+        nome: m.nome,
+        pago: m.pago,
+        entradaEm: m.entradaEm,
+      })),
+    };
+
+    return NextResponse.json({ grupo: grupoFiltrado });
   } catch (err) {
     console.error('Erro ao buscar grupo:', err);
     return NextResponse.json({ error: 'Erro interno ao buscar grupo' }, { status: 500 });

@@ -710,6 +710,15 @@ export default function GrupoPage() {
         {tab === 'pagamento' && (
           <div>
             <div className="card-copa p-6 mb-4">
+              <div className="flex items-center gap-3 mb-3 p-3 rounded-lg" style={{background:'rgba(255,255,255,0.05)'}}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-lg flex-shrink-0" style={{background:'rgba(244,168,29,0.2)', color:'#F4A81D'}}>
+                  {usuario.nome[0].toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-bold text-white">{usuario.nome}</p>
+                  <p className="text-white/40 text-xs">Participante do bolão</p>
+                </div>
+              </div>
               <h2 className="font-bold text-lg mb-1" style={{color:'#F4A81D'}}>Confirmação de Participação</h2>
               {(() => {
                 const minhasApostas = apostas.length;
