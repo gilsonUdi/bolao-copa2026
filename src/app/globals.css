@@ -22,6 +22,14 @@
   box-sizing: border-box;
 }
 
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 body {
   background: var(--copa-azul-escuro);
   color: var(--copa-branco);
@@ -83,6 +91,12 @@ body {
 .btn-verde:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 20px rgba(0,154,68,0.4);
+}
+
+.btn-verde:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Input estilo Copa */

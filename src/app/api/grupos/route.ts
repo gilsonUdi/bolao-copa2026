@@ -33,8 +33,12 @@ export async function GET(req: NextRequest) {
   const codigo = req.nextUrl.searchParams.get('codigo');
   if (!codigo) return NextResponse.json({ error: 'Código obrigatório' }, { status: 400 });
 
-  const grupo = await buscarGrupo(codigo);
-  if (!grupo) return NextResponse.json({ error: 'Grupo não encontrado' }, { status: 404 });
-
-  return NextResponse.json({ grupo });
+  try {
+    const grupo = await buscarGrupo(codigo);
+    if (!grupo) return NextResponse.json({ error: 'Grupo não encontrado' }, { status: 404 });
+    return NextResponse.json({ grupo });
+  } catch (err) {
+    console.error('Erro ao buscar grupo:', err);
+    return NextResponse.json({ error: 'Erro interno ao buscar grupo' }, { status: 500 });
+  }
 }

@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 
 type Tab = 'criar' | 'entrar';
 
+function mascaraTelefone(v: string): string {
+  const n = v.replace(/\D/g, '').slice(0, 11);
+  if (n.length <= 2) return n.length ? `(${n}` : '';
+  if (n.length <= 7) return `(${n.slice(0,2)}) ${n.slice(2)}`;
+  return `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}`;
+}
+
 export default function Home() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('criar');
@@ -21,8 +28,6 @@ export default function Home() {
 
   // Entrar no grupo
   const [codigoGrupo, setCodigoGrupo] = useState('');
-  const [membroNome, setMembroNome] = useState('');
-  const [membroTelefone, setMembroTelefone] = useState('');
 
   async function criarGrupo(e: React.FormEvent) {
     e.preventDefault();
@@ -49,38 +54,11 @@ export default function Home() {
     }
   }
 
-  async function entrarGrupo(e: React.FormEvent) {
+  function entrarGrupo(e: React.FormEvent) {
     e.preventDefault();
-    setErro('');
-    setLoading(true);
-    try {
-      const codigo = codigoGrupo.toUpperCase().trim();
-      const res = await fetch(`/api/grupos?codigo=${codigo}`);
-      if (!res.ok) throw new Error('Grupo não encontrado. Verifique o código.');
-
-      const data = await res.json();
-      const usuarioId = `user_${membroTelefone.replace(/\D/g, '')}`;
-      const jaMembro = data.grupo.membros?.find((m: { usuarioId: string }) => m.usuarioId === usuarioId);
-
-      if (!jaMembro) {
-        await fetch(`/api/grupos/${codigo}/membros`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuarioId, nome: membroNome, telefone: membroTelefone }),
-        });
-      }
-
-      localStorage.setItem('bolao_usuario', JSON.stringify({
-        id: usuarioId,
-        nome: membroNome,
-        telefone: membroTelefone,
-      }));
-      router.push(`/grupo/${codigo}`);
-    } catch (err: unknown) {
-      setErro(err instanceof Error ? err.message : 'Erro ao entrar no grupo');
-    } finally {
-      setLoading(false);
-    }
+    const codigo = codigoGrupo.toUpperCase().trim();
+    if (!codigo) return;
+    router.push(`/grupo/${codigo}?identificar=1`);
   }
 
   return (
@@ -116,7 +94,7 @@ export default function Home() {
                   : { background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.4)' }
                 }
               >
-                {t === 'criar' ? '🏆 Criar Grupo' : '🔗 Entrar com Código'}
+                {t === 'criar' ? 'Criar Grupo' : 'Entrar com Código'}
               </button>
             ))}
           </div>
@@ -138,7 +116,7 @@ export default function Home() {
 
               <div>
                 <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Seu WhatsApp *</label>
-                <input className="input-copa" placeholder="(11) 99999-9999" value={adminTelefone} onChange={e => setAdminTelefone(e.target.value)} required type="tel" />
+                <input className="input-copa" placeholder="(11) 99999-9999" value={adminTelefone} onChange={e => setAdminTelefone(mascaraTelefone(e.target.value))} required type="tel" />
               </div>
 
               <div>
@@ -164,7 +142,7 @@ export default function Home() {
               </div>
 
               <div>
-                <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">🔐 Senha do Admin *</label>
+                <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Senha do Admin *</label>
                 <input
                   className="input-copa"
                   type="password"
@@ -180,7 +158,7 @@ export default function Home() {
               {erro && <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg p-2">{erro}</p>}
 
               <button type="submit" className="btn-copa mt-2" disabled={loading}>
-                {loading ? '⏳ Criando...' : '🚀 Criar Grupo e Gerar Link'}
+                {loading ? 'Criando...' : 'Criar Grupo'}
               </button>
             </form>
           )}
@@ -202,20 +180,8 @@ export default function Home() {
                 />
               </div>
 
-              <div>
-                <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Seu Nome *</label>
-                <input className="input-copa" placeholder="Seu nome completo" value={membroNome} onChange={e => setMembroNome(e.target.value)} required />
-              </div>
-
-              <div>
-                <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">Seu WhatsApp *</label>
-                <input className="input-copa" placeholder="(11) 99999-9999" value={membroTelefone} onChange={e => setMembroTelefone(e.target.value)} required type="tel" />
-              </div>
-
-              {erro && <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg p-2">{erro}</p>}
-
-              <button type="submit" className="btn-copa mt-2" disabled={loading}>
-                {loading ? '⏳ Entrando...' : '⚽ Entrar no Bolão'}
+              <button type="submit" className="btn-copa mt-2">
+                Entrar no Bolão
               </button>
             </form>
           )}
