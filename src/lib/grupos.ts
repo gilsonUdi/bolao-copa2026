@@ -1,6 +1,6 @@
 import { db } from './firebase';
 import {
-  collection, doc, getDoc, getDocs, setDoc, updateDoc,
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
   arrayUnion, query, where, Timestamp,
 } from 'firebase/firestore';
 import { Grupo, MembroGrupo, Aposta, Vencedor } from '@/types';
@@ -135,6 +135,10 @@ export async function buscarApostasUsuario(grupoId: string, usuarioId: string): 
     const data = d.data();
     return { ...data, id: d.id, criadaEm: data.criadaEm.toDate(), atualizadaEm: data.atualizadaEm.toDate() } as Aposta;
   });
+}
+
+export async function excluirAposta(apostaId: string): Promise<void> {
+  await deleteDoc(doc(db, 'apostas', apostaId));
 }
 
 // pago=false: só salva o ID da cobrança (ainda não confirmado)

@@ -120,11 +120,7 @@ export default function GrupoPage() {
       setTodasApostas(allAData.apostas || []);
 
       // Pré-preenche apostas existentes
-      const prev: Record<number, { casa: string; visitante: string }> = {};
-      (aData.apostas || []).forEach((a: Aposta) => {
-        prev[a.jogoId] = { casa: String(a.golsCasaPrevisto), visitante: String(a.golsVisitantePrevisto) };
-      });
-      setPrevisoes(prev);
+      // Não pré-preenche inputs — cada nova aposta começa vazia
     } catch (err) {
       console.error(err);
     } finally {
@@ -226,6 +222,12 @@ export default function GrupoPage() {
       .map(([id, v], i) => ({ usuarioId: id, nome: v.nome, pontos: v.pontos, acertosExatos: v.exatos, acertosVencedor: v.vencedores, apostasTotal: v.total, posicao: i + 1 }))
       .sort((a, b) => b.pontos - a.pontos)
       .map((r, i) => ({ ...r, posicao: i + 1 }));
+  }
+
+  async function deletarAposta(apostaId: string) {
+    if (!confirm('Excluir esta aposta?')) return;
+    await fetch(`/api/apostas?id=${apostaId}`, { method: 'DELETE' });
+    await carregarDados();
   }
 
   async function gerarPix(e: React.FormEvent) {
@@ -525,8 +527,8 @@ export default function GrupoPage() {
                                 </div>
                               </div>
 
-                              {/* Modo edição (antes do jogo) */}
-                              {aberto && editPrev ? (
+                              {/* Modo edição (antes do jogo e antes de pagar) */}
+                              {aberto && !jaPagou && editPrev ? (
                                 <div className="flex items-center gap-2">
                                   <input type="number" min="0" max="20" className="placar-input" style={{width:50, fontSize:20}}
                                     value={editPrev.casa}
@@ -545,11 +547,17 @@ export default function GrupoPage() {
                               ) : (
                                 <div className="flex items-center justify-between">
                                   <span className="font-bold text-sm">{ap.golsCasaPrevisto} x {ap.golsVisitantePrevisto}</span>
-                                  {aberto && (
-                                    <button className="text-xs text-white/40 hover:text-white/70 transition-colors"
-                                      onClick={() => setPrevisoes(p => ({...p, [editKey]: {casa: String(ap.golsCasaPrevisto), visitante: String(ap.golsVisitantePrevisto)}}))}>
-                                      ✏️ Editar
-                                    </button>
+                                  {aberto && !jaPagou && (
+                                    <div className="flex items-center gap-3">
+                                      <button className="text-xs text-white/40 hover:text-white/70 transition-colors"
+                                        onClick={() => setPrevisoes(p => ({...p, [editKey]: {casa: String(ap.golsCasaPrevisto), visitante: String(ap.golsVisitantePrevisto)}}))}>
+                                        ✏️ Editar
+                                      </button>
+                                      <button className="text-xs text-red-400/60 hover:text-red-400 transition-colors"
+                                        onClick={() => deletarAposta(ap.id)}>
+                                        🗑️ Excluir
+                                      </button>
+                                    </div>
                                   )}
                                 </div>
                               )}
@@ -559,18 +567,20 @@ export default function GrupoPage() {
                       </div>
                     )}
 
-                    {/* Nova aposta (só antes do início) */}
-                    {aberto && (
+                    {/* Nova aposta (só antes do início e antes de pagar) */}
+                    {aberto && !jaPagou && (
                       <div className="mt-3">
                         <p className="text-xs text-white/40 mb-2">
                           {apostasJogo.length === 0 ? 'Sua aposta:' : `Nova aposta (#${apostasJogo.length + 1}):`}
                         </p>
                         <div className="flex items-center gap-2">
                           <input type="number" min="0" max="20" className="placar-input"
+                            placeholder="0"
                             value={prev.casa}
                             onChange={(e) => setPrevisoes((p) => ({ ...p, [jogo.id]: { ...prev, casa: e.target.value } }))} />
                           <span className="text-white/30 font-bold text-xl">x</span>
                           <input type="number" min="0" max="20" className="placar-input"
+                            placeholder="0"
                             value={prev.visitante}
                             onChange={(e) => setPrevisoes((p) => ({ ...p, [jogo.id]: { ...prev, visitante: e.target.value } }))} />
                           <button
@@ -586,6 +596,12 @@ export default function GrupoPage() {
                             ⚠️ Cada nova aposta = R$ {grupo.valorAposta.toLocaleString('pt-BR',{minimumFractionDigits:2})} adicional
                           </p>
                         )}
+                      </div>
+                    )}
+                    {/* Apostas travadas após pagamento */}
+                    {aberto && jaPagou && apostasJogo.length > 0 && (
+                      <div className="mt-2 text-center py-1">
+                        <p className="text-white/30 text-xs">🔒 Apostas encerradas após pagamento</p>
                       </div>
                     )}
 
@@ -665,9 +681,18 @@ export default function GrupoPage() {
           <div>
             <div className="card-copa p-6 mb-4">
               <h2 className="font-bold text-lg mb-1" style={{color:'#F4A81D'}}>Confirmação de Participação</h2>
-              <p className="text-white/60 text-sm mb-4">
-                Valor da entrada: <strong className="text-white">R$ {grupo.valorAposta.toLocaleString('pt-BR', {minimumFractionDigits:2})}</strong>
-              </p>
+              {(() => {
+                const minhasApostas = apostas.length;
+                const valorTotal = minhasApostas > 0 ? minhasApostas * grupo.valorAposta : grupo.valorAposta;
+                return (
+                  <div className="text-white/60 text-sm mb-4">
+                    <p>Valor por aposta: <strong className="text-white">R$ {grupo.valorAposta.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></p>
+                    {minhasApostas > 0 && (
+                      <p className="mt-1">Total ({minhasApostas} aposta{minhasApostas > 1 ? 's' : ''}): <strong style={{color:'#F4A81D', fontSize:'1.1em'}}>R$ {valorTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {jaPagou ? (
                 <div className="text-center py-4">

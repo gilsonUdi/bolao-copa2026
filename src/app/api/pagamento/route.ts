@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { criarOuBuscarCliente, criarCobrancaPix, consultarPagamento } from '@/lib/asaas';
-import { buscarGrupo, marcarPago } from '@/lib/grupos';
+import { buscarGrupo, marcarPago, buscarApostasUsuario } from '@/lib/grupos';
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,13 +20,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Pagamento já realizado' }, { status: 400 });
     }
 
+    // Calcula valor total: nº de apostas × valor por aposta
+    const apostasUsuario = await buscarApostasUsuario(grupoId, usuarioId);
+    const totalApostas = apostasUsuario.length;
+    const valorTotal = totalApostas > 0 ? totalApostas * grupo.valorAposta : grupo.valorAposta;
+
     // Cria/busca cliente no Asaas
     const cliente = await criarOuBuscarCliente(nome, cpf.replace(/\D/g, ''), email);
 
-    const descricao = `Bolão Copa 2026 - ${grupo.nome}`;
+    const qtdLabel = totalApostas > 1 ? `${totalApostas} apostas` : `1 aposta`;
+    const descricao = `Bolão Copa 2026 - ${grupo.nome} (${qtdLabel})`;
     const cobranca = await criarCobrancaPix({
       customerId: cliente.id,
-      valor: grupo.valorAposta,
+      valor: valorTotal,
       descricao,
       externalReference: `${grupoId}_${usuarioId}`,
     });

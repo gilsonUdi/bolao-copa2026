@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { salvarAposta, buscarApostasGrupo, buscarApostasUsuario, buscarGrupo, contarApostasJogo, marcarApostaPaga } from '@/lib/grupos';
+import { salvarAposta, buscarApostasGrupo, buscarApostasUsuario, buscarGrupo, contarApostasJogo, marcarApostaPaga, excluirAposta } from '@/lib/grupos';
 import { criarOuBuscarCliente, criarCobrancaPix } from '@/lib/asaas';
 import { Aposta } from '@/types';
 
@@ -93,4 +93,16 @@ export async function GET(req: NextRequest) {
     : await buscarApostasGrupo(grupoId);
 
   return NextResponse.json({ apostas });
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const apostaId = req.nextUrl.searchParams.get('id');
+    if (!apostaId) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 });
+    await excluirAposta(apostaId);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Erro ao excluir aposta' }, { status: 500 });
+  }
 }
