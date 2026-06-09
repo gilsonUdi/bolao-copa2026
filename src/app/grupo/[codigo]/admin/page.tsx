@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Grupo, Jogo, Ranking, Vencedor } from '@/types';
+import { Grupo, Jogo, Ranking, Vencedor, Aposta } from '@/types';
 
 interface Usuario { id: string; nome: string; telefone: string; }
 
@@ -23,6 +23,7 @@ export default function AdminPage() {
   const [premioTotal, setPremioTotal] = useState(0);
   const [vencedoresDeclarados, setVencedoresDeclarados] = useState<Vencedor[]>([]);
   const [pagandoVencedor, setPagandoVencedor] = useState<number | null>(null);
+  const [todasApostas, setTodasApostas] = useState<Aposta[]>([]);
   const [modoAuditoria, setModoAuditoria] = useState(false);
   const [vencedoresPreview, setVencedoresPreview] = useState<Vencedor[]>([]);
   const [abaAdmin, setAbaAdmin] = useState<'compartilhar'|'jogos'|'vencedores'|'financeiro'>('compartilhar');
@@ -47,19 +48,22 @@ export default function AdminPage() {
 
   const carregarDados = useCallback(async () => {
     try {
-      const [gRes, jRes, rRes] = await Promise.all([
+      const [gRes, jRes, rRes, aRes] = await Promise.all([
         fetch(`/api/grupos?codigo=${codigo}&admin=1`),
         fetch('/api/jogos'),
         fetch(`/api/admin/vencedores?grupoId=grupo_${codigo}`),
+        fetch(`/api/apostas?grupoId=grupo_${codigo}`),
       ]);
       const gData = await gRes.json();
       const jData = await jRes.json();
       const rData = await rRes.json();
+      const aData = await aRes.json();
       setGrupo(gData.grupo);
       setJogos(jData.jogos || []);
       setRanking(rData.ranking || []);
       setPremioTotal(rData.premioTotal || 0);
       setVencedoresDeclarados(rData.vencedoresDeclarados || []);
+      setTodasApostas(aData.apostas || []);
     } finally {
       setLoading(false);
     }
@@ -88,10 +92,20 @@ export default function AdminPage() {
     }
   }
 
+  // Calcula total real: soma das apostas de cada membro pago × valorAposta
+  function calcularTotalArrecadado(): number {
+    if (!grupo) return 0;
+    return grupo.membros
+      .filter(m => m.pago)
+      .reduce((acc, m) => {
+        const qtd = todasApostas.filter(a => a.usuarioId === m.usuarioId).length;
+        return acc + (qtd > 0 ? qtd : 1) * grupo.valorAposta;
+      }, 0);
+  }
+
   function abrirAuditoria() {
     if (!grupo || ranking.length === 0) return;
-    const membrosPageos = grupo.membros.filter(m => m.pago);
-    const totalPago = membrosPageos.length * grupo.valorAposta * 0.9;
+    const totalPago = calcularTotalArrecadado() * 0.9;
     const percents = [0.6, 0.3, 0.1];
     const top3 = ranking.slice(0, 3);
     const preview: Vencedor[] = top3.map((r, i) => {
@@ -112,8 +126,7 @@ export default function AdminPage() {
 
   async function declararVencedores() {
     if (!grupo) return;
-    const membrosPageos = grupo.membros.filter(m => m.pago);
-    const totalPago = membrosPageos.length * grupo.valorAposta * 0.9;
+    const totalPago = calcularTotalArrecadado() * 0.9;
     // Distribui: 60% 1º, 30% 2º, 10% 3º
     const top3 = ranking.slice(0, 3);
     const percents = [0.6, 0.3, 0.1];
@@ -274,7 +287,7 @@ export default function AdminPage() {
   }
 
   const membrosPageos = grupo.membros.filter(m => m.pago);
-  const totalArrecadado = membrosPageos.length * grupo.valorAposta;
+  const totalArrecadado = calcularTotalArrecadado();
   const premioEstimado = totalArrecadado * 0.9;
 
   return (
@@ -530,19 +543,24 @@ export default function AdminPage() {
           </div>
 
           <h3 className="text-xs font-bold text-white/40 uppercase tracking-wide mb-2">Status por membro</h3>
-          {grupo.membros.map((m) => (
-            <div key={m.usuarioId} className="flex items-center justify-between py-2" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-              <div>
-                <p className="text-sm font-medium">{m.nome}</p>
-                <p className="text-xs text-white/30">{m.telefone}</p>
+          {grupo.membros.map((m) => {
+            const qtdApostas = todasApostas.filter(a => a.usuarioId === m.usuarioId).length;
+            const valorMembro = (qtdApostas > 0 ? qtdApostas : 1) * grupo.valorAposta;
+            return (
+              <div key={m.usuarioId} className="flex items-center justify-between py-2" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                <div>
+                  <p className="text-sm font-medium">{m.nome}</p>
+                  <p className="text-xs text-white/30">{m.telefone}</p>
+                  <p className="text-xs text-white/40">{qtdApostas} aposta{qtdApostas !== 1 ? 's' : ''} · R$ {valorMembro.toLocaleString('pt-BR', {minimumFractionDigits:2})}</p>
+                </div>
+                {m.pago ? (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Pago</span>
+                ) : (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">Pendente</span>
+                )}
               </div>
-              {m.pago ? (
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Pago</span>
-              ) : (
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">Pendente</span>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>}
 
         {/* Atualizar placares — dentro de Financeiro */}
