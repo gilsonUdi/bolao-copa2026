@@ -91,7 +91,7 @@ export default function GrupoPage() {
         .catch(() => {});
       return;
     }
-    const u = localStorage.getItem('bolao_usuario');
+    const u = sessionStorage.getItem('bolao_usuario');
     if (u) {
       setUsuario(JSON.parse(u));
     } else {
@@ -120,7 +120,7 @@ export default function GrupoPage() {
         });
       }
       const novoUsuario = { id: usuarioId, nome: nomeEntrada, telefone: telefoneEntrada };
-      localStorage.setItem('bolao_usuario', JSON.stringify(novoUsuario));
+      sessionStorage.setItem('bolao_usuario', JSON.stringify(novoUsuario));
       setUsuario(novoUsuario);
       // Remove o parâmetro ?identificar=1 da URL sem recarregar
       router.replace(`/grupo/${codigo}`, { scroll: false });
@@ -145,13 +145,26 @@ export default function GrupoPage() {
       const aData = await aRes.json();
       const allAData = await allARes.json();
 
-      setGrupo(gData.grupo);
+      // Verifica se o usuário do sessionStorage é realmente membro DESTE grupo
+      // Isso evita que uma pessoa veja apostas de outra quando compartilham o mesmo device/aba
+      const grupoData = gData.grupo;
+      if (grupoData) {
+        const isMembro = grupoData.membros?.find(
+          (m: { usuarioId: string }) => m.usuarioId === usuario.id
+        );
+        if (!isMembro) {
+          // Usuário não pertence a este grupo → exibe formulário de identificação
+          setGrupoPreview({ nome: grupoData.nome, valorAposta: grupoData.valorAposta });
+          setUsuario(null);
+          setLoading(false);
+          return;
+        }
+      }
+
+      setGrupo(grupoData);
       setJogos(jData.jogos || []);
       setApostas(aData.apostas || []);
       setTodasApostas(allAData.apostas || []);
-
-      // Pré-preenche apostas existentes
-      // Não pré-preenche inputs — cada nova aposta começa vazia
     } catch (err) {
       console.error(err);
     } finally {
