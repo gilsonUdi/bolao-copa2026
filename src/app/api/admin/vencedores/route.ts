@@ -38,7 +38,13 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => b.pontos - a.pontos)
     .map((r, i) => ({ ...r, posicao: i + 1 }));
 
-  const totalPago = grupo.membros.filter((m) => m.pago).length * grupo.valorAposta;
+  // Soma apostas reais de cada membro pago (não apenas 1 por pessoa)
+  const totalPago = grupo.membros
+    .filter((m) => m.pago)
+    .reduce((acc, m) => {
+      const qtd = apostas.filter((a) => a.usuarioId === m.usuarioId).length;
+      return acc + (qtd > 0 ? qtd : 1) * grupo.valorAposta;
+    }, 0);
   const premioTotal = totalPago * 0.9;
 
   return NextResponse.json({ ranking, premioTotal, vencedoresDeclarados: grupo.vencedores || [] });
