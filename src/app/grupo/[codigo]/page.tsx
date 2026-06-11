@@ -21,7 +21,7 @@ function mascaraCPF(v: string): string {
   return `${n.slice(0,3)}.${n.slice(3,6)}.${n.slice(6,9)}-${n.slice(9)}`;
 }
 
-type Tab = 'apostas' | 'ranking' | 'pagamento';
+type Tab = 'apostas' | 'ranking' | 'palpites' | 'pagamento';
 
 interface Usuario { id: string; nome: string; telefone: string; }
 
@@ -393,7 +393,12 @@ export default function GrupoPage() {
   const jogosFiltrados = faseAtiva === 'Todos' ? jogosLiberados : jogosLiberados.filter((j) => j.fase === faseAtiva);
   const membroAtual = grupo.membros.find((m) => m.usuarioId === usuario?.id);
   const jaPagou = membroAtual?.pago ?? false;
-  const totalArrecadado = grupo.membros.filter((m) => m.pago).length * grupo.valorAposta;
+  const totalArrecadado = grupo.membros
+    .filter((m) => m.pago)
+    .reduce((acc, m) => {
+      const qtd = todasApostas.filter((a) => a.usuarioId === m.usuarioId).length;
+      return acc + (qtd > 0 ? qtd : 1) * grupo.valorAposta;
+    }, 0);
   const premioEstimado = totalArrecadado * 0.9;
   const ranking = calcularRanking();
 
@@ -418,8 +423,8 @@ export default function GrupoPage() {
       {/* Tabs */}
       <div className="sticky top-[60px] z-10 px-4" style={{background:'rgba(13,31,60,0.95)', borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
         <div className="max-w-2xl mx-auto flex">
-          {(['apostas','ranking','pagamento'] as Tab[]).map((t) => {
-            const labels = { apostas: 'Apostas', ranking: 'Ranking', pagamento: 'Pagamento' };
+          {(['apostas','ranking','palpites','pagamento'] as Tab[]).map((t) => {
+            const labels = { apostas: 'Apostas', ranking: 'Ranking', palpites: 'Palpites', pagamento: 'Pagamento' };
             return (
               <button
                 key={t}
@@ -716,6 +721,60 @@ export default function GrupoPage() {
                 <p>O ranking será atualizado conforme os jogos forem encerrados</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tab Palpites */}
+        {tab === 'palpites' && (
+          <div>
+            {grupo.membros.map((m) => {
+              const apostasDoMembro = todasApostas.filter((a) => a.usuarioId === m.usuarioId);
+              const jogosBetados = jogosLiberados
+                .map((jogo) => ({ jogo, aps: apostasDoMembro.filter((a) => a.jogoId === jogo.id) }))
+                .filter(({ aps }) => aps.length > 0);
+
+              return (
+                <div key={m.usuarioId} className="card-copa p-4 mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-bold text-white">
+                      {m.nome}
+                      {m.usuarioId === usuario?.id && <span className="ml-2 text-xs text-white/30">(você)</span>}
+                    </p>
+                    {m.pago ? (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Pago</span>
+                    ) : (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">Pendente</span>
+                    )}
+                  </div>
+                  {jogosBetados.length === 0 ? (
+                    <p className="text-white/30 text-xs italic">Nenhum palpite registrado</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {jogosBetados.map(({ jogo, aps }) => (
+                        <div key={jogo.id} className="flex items-start justify-between py-1.5" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-white/50 truncate">
+                              {jogo.timeCasa} x {jogo.timeVisitante}
+                            </p>
+                            <p className="text-xs text-white/30">
+                              {new Date(jogo.dataHora).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 ml-3">
+                            {aps.map((ap) => (
+                              <span key={ap.id} className="text-sm font-black tabular-nums" style={{color:'#F4A81D'}}>
+                                {ap.golsCasaPrevisto} x {ap.golsVisitantePrevisto}
+                                {aps.length > 1 && <span className="text-xs font-normal text-white/30 ml-1">#{ap.numero}</span>}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
