@@ -54,6 +54,31 @@ export async function criarGrupo(dados: {
   return grupo;
 }
 
+export async function listarTodosGrupos(): Promise<Grupo[]> {
+  const snap = await getDocs(collection(db, 'grupos'));
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      ...data,
+      jogosAtivos: data.jogosAtivos ?? [],
+      vencedores: data.vencedores ?? [],
+      criadoEm: data.criadoEm?.toDate?.() ?? new Date(),
+      membros: (data.membros ?? []).map((m: MembroGrupo & { entradaEm: Timestamp }) => ({
+        ...m,
+        entradaEm: (m.entradaEm as unknown as Timestamp)?.toDate?.() ?? new Date(),
+      })),
+    } as Grupo;
+  });
+}
+
+export async function listarTodasApostas(): Promise<Aposta[]> {
+  const snap = await getDocs(collection(db, 'apostas'));
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return { ...data, id: d.id, criadaEm: data.criadaEm.toDate(), atualizadaEm: data.atualizadaEm.toDate() } as Aposta;
+  });
+}
+
 export async function buscarGrupo(codigo: string): Promise<Grupo | null> {
   const id = codigo.startsWith('grupo_') ? codigo : `grupo_${codigo}`;
   const snap = await getDoc(doc(db, 'grupos', id));
