@@ -722,8 +722,12 @@ export default function GrupoPage() {
         {tab === 'palpites' && (
           <div>
             {grupo.membros.map((m) => {
-              const apostasDoMembro = todasApostas.filter((a) => a.usuarioId === m.usuarioId);
-              const jogosBetados = jogosLiberados
+              // Para o usuário atual usa apostas (fetch garantido); demais usam todasApostas
+              const apostasDoMembro = m.usuarioId === usuario?.id
+                ? apostas
+                : todasApostas.filter((a) => a.usuarioId === m.usuarioId);
+              // Usa todos os jogos — não só os liberados — para não perder apostas de jogos removidos
+              const jogosBetados = jogos
                 .map((jogo) => ({ jogo, aps: apostasDoMembro.filter((a) => a.jogoId === jogo.id) }))
                 .filter(({ aps }) => aps.length > 0);
 
