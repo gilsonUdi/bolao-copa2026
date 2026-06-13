@@ -17,17 +17,20 @@ export async function POST(req: NextRequest) {
     const membro = grupo.membros.find((m) => m.usuarioId === usuarioId);
     const apostasUsuario = await buscarApostasUsuario(grupoId, usuarioId);
 
-    // Se já pagou: cobra só apostas novas (não pagas individualmente)
-    const apostasParaPagar = membro?.pago
-      ? apostasUsuario.filter((a) => !a.pago)
-      : apostasUsuario;
-
-    if (membro?.pago && apostasParaPagar.length === 0) {
-      return NextResponse.json({ error: 'Nenhuma aposta pendente de pagamento' }, { status: 400 });
+    // Calcula quantas apostas ainda não foram cobertas por pagamento
+    // Usa contagem registrada no membro para evitar depender de ap.pago (pode estar desatualizado)
+    let totalApostas: number;
+    if (membro?.pago) {
+      const jaPatias = membro.apostasPatias ?? membro.apostasNoPagamento ?? 0;
+      totalApostas = Math.max(0, apostasUsuario.length - jaPatias);
+      if (totalApostas === 0) {
+        return NextResponse.json({ error: 'Nenhuma aposta pendente de pagamento' }, { status: 400 });
+      }
+    } else {
+      totalApostas = apostasUsuario.length > 0 ? apostasUsuario.length : 1;
     }
 
-    const totalApostas = apostasParaPagar.length;
-    const valorTotal = totalApostas > 0 ? totalApostas * grupo.valorAposta : grupo.valorAposta;
+    const valorTotal = totalApostas * grupo.valorAposta;
 
     // Cria/busca cliente no Asaas
     const cliente = await criarOuBuscarCliente(nome, cpf.replace(/\D/g, ''), email);
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
       externalReference: `${grupoId}_${usuarioId}`,
     });
 
-    await marcarPago(grupoId, usuarioId, cobranca.paymentId, cobranca.invoiceUrl);
+    await marcarPago(grupoId, usuarioId, cobranca.paymentId, cobranca.invoiceUrl, false, apostasUsuario.length);
 
     return NextResponse.json({
       paymentId: cobranca.paymentId,

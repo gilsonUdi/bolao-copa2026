@@ -37,6 +37,8 @@ export interface MembroGrupo {
   nome: string;
   telefone: string;
   pago: boolean;
+  apostasNoPagamento?: number; // qtd de apostas cobertas no primeiro pagamento
+  apostasPatias?: number;       // total acumulado de apostas já pagas (incluindo adicionais)
   chavePix?: string;
   tipoChavePix?: 'CPF' | 'PHONE' | 'EMAIL' | 'EVP';
   asaasPaymentId?: string;
