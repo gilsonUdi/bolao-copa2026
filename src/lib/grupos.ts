@@ -1,7 +1,7 @@
 import { db } from './firebase';
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-  arrayUnion, query, where, Timestamp, writeBatch,
+  arrayUnion, query, where, Timestamp,
 } from 'firebase/firestore';
 import { Grupo, MembroGrupo, Aposta, Vencedor } from '@/types';
 
@@ -45,15 +45,22 @@ export async function criarGrupo(dados: {
     criadoEm: new Date(),
   };
 
-  const batch = writeBatch(db);
-  batch.set(doc(db, 'grupos', id), {
+  // Cria o grupo
+  await setDoc(doc(db, 'grupos', id), {
     ...grupo,
     criadoEm: Timestamp.fromDate(grupo.criadoEm),
     membros: grupo.membros.map((m) => ({ ...m, entradaEm: Timestamp.fromDate(m.entradaEm) })),
   });
-  // Mantém índice de todos os IDs de grupos para consulta dev
-  batch.set(doc(db, 'meta', 'grupos'), { ids: arrayUnion(id) }, { merge: true });
-  await batch.commit();
+
+  // Registra no índice dev (falha silenciosa — não afeta o grupo)
+  try {
+    await updateDoc(doc(db, 'meta', 'grupos'), { ids: arrayUnion(id) });
+  } catch {
+    // Se meta/grupos não existe ainda, cria
+    try {
+      await setDoc(doc(db, 'meta', 'grupos'), { ids: [id] }, { merge: true });
+    } catch { /* ignora */ }
+  }
 
   return grupo;
 }

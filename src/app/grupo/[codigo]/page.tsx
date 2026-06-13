@@ -108,16 +108,20 @@ export default function GrupoPage() {
     setEntrando(true);
     try {
       const res = await fetch(`/api/grupos?codigo=${codigo}`);
-      if (!res.ok) throw new Error('Grupo não encontrado');
-      const usuarioId = `user_${telefoneEntrada.replace(/\D/g, '')}`;
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
+      const usuarioId = `user_${telefoneEntrada.replace(/\D/g, '')}`;
       const jaMembro = data.grupo?.membros?.find((m: {usuarioId: string}) => m.usuarioId === usuarioId);
       if (!jaMembro) {
-        await fetch(`/api/grupos/${codigo}/membros`, {
+        const membroRes = await fetch(`/api/grupos/${codigo}/membros`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ usuarioId, nome: nomeEntrada, telefone: telefoneEntrada }),
         });
+        if (!membroRes.ok) {
+          const membroData = await membroRes.json();
+          throw new Error(membroData.error || `Erro ao entrar no grupo (${membroRes.status})`);
+        }
       }
       const novoUsuario = { id: usuarioId, nome: nomeEntrada, telefone: telefoneEntrada };
       sessionStorage.setItem('bolao_usuario', JSON.stringify(novoUsuario));
