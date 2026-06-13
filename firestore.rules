@@ -20,5 +20,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true; // Em produção, restringir ao admin
     }
+
+    // Índice interno usado pelo painel dev
+    match /meta/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }

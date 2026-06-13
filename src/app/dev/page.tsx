@@ -40,12 +40,12 @@ export default function DevPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/dev/grupos?senha=${encodeURIComponent(senha)}`);
-      if (!res.ok) { setErro('Senha incorreta'); return; }
       const data = await res.json();
-      setGrupos(data.grupos);
+      if (!res.ok) { setErro(data.error || 'Senha incorreta'); return; }
+      setGrupos(data.grupos || []);
       setAutenticado(true);
-    } catch {
-      setErro('Erro ao carregar');
+    } catch (err) {
+      setErro(`Erro ao carregar: ${String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -56,9 +56,30 @@ export default function DevPage() {
     try {
       const res = await fetch(`/api/dev/grupos?senha=${encodeURIComponent(senha)}`);
       const data = await res.json();
-      setGrupos(data.grupos);
+      if (res.ok) setGrupos(data.grupos || []);
     } finally {
       setLoading(false);
+    }
+  }
+
+  const [migrando, setMigrando] = useState(false);
+  const [msgMigracao, setMsgMigracao] = useState('');
+
+  async function migrar() {
+    if (!confirm('Registrar todos os grupos existentes no índice?')) return;
+    setMigrando(true);
+    setMsgMigracao('');
+    try {
+      const res = await fetch(`/api/dev/migrar?senha=${encodeURIComponent(senha)}`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setMsgMigracao(`✓ ${data.total} grupos indexados`);
+        await recarregar();
+      } else {
+        setMsgMigracao(`Erro: ${data.error}`);
+      }
+    } finally {
+      setMigrando(false);
     }
   }
 
@@ -103,11 +124,21 @@ export default function DevPage() {
             <h1 className="font-black text-2xl" style={{color:'#F4A81D'}}>🛠️ Dev Dashboard</h1>
             <p className="text-white/40 text-sm">{grupos.length} grupos · atualizado agora</p>
           </div>
-          <button onClick={recarregar} disabled={loading}
-            className="text-sm px-4 py-2 rounded-lg font-bold transition-all"
-            style={{background:'rgba(244,168,29,0.15)', color:'#F4A81D', border:'1px solid rgba(244,168,29,0.3)'}}>
-            {loading ? '...' : '↻ Atualizar'}
-          </button>
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex gap-2">
+              <button onClick={migrar} disabled={migrando || loading}
+                className="text-sm px-3 py-2 rounded-lg font-bold transition-all"
+                style={{background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.4)', border:'1px solid rgba(255,255,255,0.1)'}}>
+                {migrando ? '...' : '⚙ Indexar'}
+              </button>
+              <button onClick={recarregar} disabled={loading}
+                className="text-sm px-4 py-2 rounded-lg font-bold transition-all"
+                style={{background:'rgba(244,168,29,0.15)', color:'#F4A81D', border:'1px solid rgba(244,168,29,0.3)'}}>
+                {loading ? '...' : '↻ Atualizar'}
+              </button>
+            </div>
+            {msgMigracao && <p className="text-xs" style={{color: msgMigracao.startsWith('✓') ? '#4ade80' : '#f87171'}}>{msgMigracao}</p>}
+          </div>
         </div>
 
         {/* Resumo geral */}

@@ -145,23 +145,7 @@ export default function GrupoPage() {
       const aData = await aRes.json();
       const allAData = await allARes.json();
 
-      // Verifica se o usuário do sessionStorage é realmente membro DESTE grupo
-      // Isso evita que uma pessoa veja apostas de outra quando compartilham o mesmo device/aba
-      const grupoData = gData.grupo;
-      if (grupoData) {
-        const isMembro = grupoData.membros?.find(
-          (m: { usuarioId: string }) => m.usuarioId === usuario.id
-        );
-        if (!isMembro) {
-          // Usuário não pertence a este grupo → exibe formulário de identificação
-          setGrupoPreview({ nome: grupoData.nome, valorAposta: grupoData.valorAposta });
-          setUsuario(null);
-          setLoading(false);
-          return;
-        }
-      }
-
-      setGrupo(grupoData);
+      setGrupo(gData.grupo);
       setJogos(jData.jogos || []);
       setApostas(aData.apostas || []);
       setTodasApostas(allAData.apostas || []);

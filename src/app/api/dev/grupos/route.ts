@@ -7,10 +7,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   }
 
-  const [grupos, apostas] = await Promise.all([
-    listarTodosGrupos(),
-    listarTodasApostas(),
-  ]);
+  let grupos, apostas;
+  try {
+    [grupos, apostas] = await Promise.all([
+      listarTodosGrupos(),
+      listarTodasApostas(),
+    ]);
+  } catch (err) {
+    console.error('Erro ao listar dados:', err);
+    return NextResponse.json({ error: `Erro Firebase: ${String(err)}` }, { status: 500 });
+  }
 
   const stats = grupos.map((g) => {
     const apostasGrupo = apostas.filter((a) => a.grupoId === g.id);

@@ -1,7 +1,7 @@
 import { db } from './firebase';
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-  arrayUnion, query, where, Timestamp,
+  arrayUnion, query, where, Timestamp, writeBatch,
 } from 'firebase/firestore';
 import { Grupo, MembroGrupo, Aposta, Vencedor } from '@/types';
 
@@ -45,30 +45,40 @@ export async function criarGrupo(dados: {
     criadoEm: new Date(),
   };
 
-  await setDoc(doc(db, 'grupos', id), {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'grupos', id), {
     ...grupo,
     criadoEm: Timestamp.fromDate(grupo.criadoEm),
     membros: grupo.membros.map((m) => ({ ...m, entradaEm: Timestamp.fromDate(m.entradaEm) })),
   });
+  // Mantém índice de todos os IDs de grupos para consulta dev
+  batch.set(doc(db, 'meta', 'grupos'), { ids: arrayUnion(id) }, { merge: true });
+  await batch.commit();
 
   return grupo;
 }
 
 export async function listarTodosGrupos(): Promise<Grupo[]> {
-  const snap = await getDocs(collection(db, 'grupos'));
-  return snap.docs.map((d) => {
-    const data = d.data();
-    return {
-      ...data,
-      jogosAtivos: data.jogosAtivos ?? [],
-      vencedores: data.vencedores ?? [],
-      criadoEm: data.criadoEm?.toDate?.() ?? new Date(),
-      membros: (data.membros ?? []).map((m: MembroGrupo & { entradaEm: Timestamp }) => ({
-        ...m,
-        entradaEm: (m.entradaEm as unknown as Timestamp)?.toDate?.() ?? new Date(),
-      })),
-    } as Grupo;
-  });
+  // Usa documento índice (meta/grupos) para evitar precisar de permissão list na collection
+  const metaSnap = await getDoc(doc(db, 'meta', 'grupos'));
+  if (!metaSnap.exists()) return [];
+  const ids: string[] = metaSnap.data().ids || [];
+  const snaps = await Promise.all(ids.map((id) => getDoc(doc(db, 'grupos', id))));
+  return snaps
+    .filter((s) => s.exists())
+    .map((s) => {
+      const data = s.data()!;
+      return {
+        ...data,
+        jogosAtivos: data.jogosAtivos ?? [],
+        vencedores: data.vencedores ?? [],
+        criadoEm: data.criadoEm?.toDate?.() ?? new Date(),
+        membros: (data.membros ?? []).map((m: MembroGrupo & { entradaEm: Timestamp }) => ({
+          ...m,
+          entradaEm: (m.entradaEm as unknown as Timestamp)?.toDate?.() ?? new Date(),
+        })),
+      } as Grupo;
+    });
 }
 
 export async function listarTodasApostas(): Promise<Aposta[]> {
