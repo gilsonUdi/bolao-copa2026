@@ -41,7 +41,7 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      sessionStorage.setItem('bolao_usuario', JSON.stringify({
+      localStorage.setItem(`bolao_${data.grupo.codigo}_usuario`, JSON.stringify({
         id: `user_${adminTelefone.replace(/\D/g, '')}`,
         nome: adminNome,
         telefone: adminTelefone,

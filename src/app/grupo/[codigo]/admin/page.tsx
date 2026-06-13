@@ -39,7 +39,7 @@ export default function AdminPage() {
   const SESSION_KEY = `admin_auth_${codigo}`;
 
   useEffect(() => {
-    const u = sessionStorage.getItem('bolao_usuario');
+    const u = localStorage.getItem(`bolao_${codigo}_usuario`);
     if (!u) { router.push('/'); return; }
     setUsuario(JSON.parse(u));
     // Verifica se já está autenticado nesta sessão

@@ -14,15 +14,19 @@ export async function POST(req: NextRequest) {
     const grupo = await buscarGrupo(grupoId.replace('grupo_', ''));
     if (!grupo) return NextResponse.json({ error: 'Grupo não encontrado' }, { status: 404 });
 
-    // Verifica se já pagou
     const membro = grupo.membros.find((m) => m.usuarioId === usuarioId);
-    if (membro?.pago) {
-      return NextResponse.json({ error: 'Pagamento já realizado' }, { status: 400 });
+    const apostasUsuario = await buscarApostasUsuario(grupoId, usuarioId);
+
+    // Se já pagou: cobra só apostas novas (não pagas individualmente)
+    const apostasParaPagar = membro?.pago
+      ? apostasUsuario.filter((a) => !a.pago)
+      : apostasUsuario;
+
+    if (membro?.pago && apostasParaPagar.length === 0) {
+      return NextResponse.json({ error: 'Nenhuma aposta pendente de pagamento' }, { status: 400 });
     }
 
-    // Calcula valor total: nº de apostas × valor por aposta
-    const apostasUsuario = await buscarApostasUsuario(grupoId, usuarioId);
-    const totalApostas = apostasUsuario.length;
+    const totalApostas = apostasParaPagar.length;
     const valorTotal = totalApostas > 0 ? totalApostas * grupo.valorAposta : grupo.valorAposta;
 
     // Cria/busca cliente no Asaas

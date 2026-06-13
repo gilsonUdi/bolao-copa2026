@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
 
 // Webhook do Asaas — chamado quando um pagamento é confirmado
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Asaas envia eventos como PAYMENT_RECEIVED, PAYMENT_CONFIRMED
     if (!['PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED'].includes(body.event)) {
       return NextResponse.json({ ok: true });
     }
@@ -25,18 +24,30 @@ export async function POST(req: NextRequest) {
 
     if (!grupoId || !usuarioId) return NextResponse.json({ ok: true });
 
-    // Atualiza o grupo marcando o membro como pago
-    const gruposSnap = await getDocs(
-      query(collection(db, 'grupos'), where('__name__', '==', grupoId))
-    );
-
-    for (const doc of gruposSnap.docs) {
-      const grupo = doc.data();
+    // Marca membro como pago no grupo
+    const grupoSnap = await getDoc(doc(db, 'grupos', grupoId));
+    if (grupoSnap.exists()) {
+      const grupo = grupoSnap.data();
       const membros = grupo.membros.map((m: { usuarioId: string; pago: boolean }) =>
         m.usuarioId === usuarioId ? { ...m, pago: true, asaasPaymentId: payment.id } : m
       );
-      await updateDoc(doc.ref, { membros });
+      await updateDoc(grupoSnap.ref, { membros });
     }
+
+    // Marca todas as apostas não pagas deste usuário/grupo como pagas
+    const apostasSnap = await getDocs(
+      query(
+        collection(db, 'apostas'),
+        where('grupoId', '==', grupoId),
+        where('usuarioId', '==', usuarioId),
+        where('pago', '==', false),
+      )
+    );
+    await Promise.all(
+      apostasSnap.docs.map((d) =>
+        updateDoc(d.ref, { pago: true, asaasPaymentId: payment.id })
+      )
+    );
 
     return NextResponse.json({ ok: true });
   } catch (err) {

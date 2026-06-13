@@ -83,15 +83,18 @@ export default function GrupoPage() {
   const [grupoPreview, setGrupoPreview] = useState<{nome:string; valorAposta:number} | null>(null);
 
   useEffect(() => {
-    // Se veio da home via código, sempre mostra o formulário de identificação
+    const storageKey = `bolao_${codigo}_usuario`;
+    // Se veio da home via código, limpa a sessão anterior e força identificação
     if (forcarIdentificacao) {
+      localStorage.removeItem(storageKey);
       fetch(`/api/grupos?codigo=${codigo}`)
         .then(r => r.json())
         .then(d => { if (d.grupo) setGrupoPreview({ nome: d.grupo.nome, valorAposta: d.grupo.valorAposta }); })
         .catch(() => {});
       return;
     }
-    const u = sessionStorage.getItem('bolao_usuario');
+    // Chave por grupo: usuário que volta ao mesmo grupo é identificado automaticamente
+    const u = localStorage.getItem(storageKey);
     if (u) {
       setUsuario(JSON.parse(u));
     } else {
@@ -124,7 +127,7 @@ export default function GrupoPage() {
         }
       }
       const novoUsuario = { id: usuarioId, nome: nomeEntrada, telefone: telefoneEntrada };
-      sessionStorage.setItem('bolao_usuario', JSON.stringify(novoUsuario));
+      localStorage.setItem(`bolao_${codigo}_usuario`, JSON.stringify(novoUsuario));
       setUsuario(novoUsuario);
       // Remove o parâmetro ?identificar=1 da URL sem recarregar
       router.replace(`/grupo/${codigo}`, { scroll: false });
@@ -564,8 +567,8 @@ export default function GrupoPage() {
                                 </div>
                               </div>
 
-                              {/* Modo edição (antes do jogo e antes de pagar) */}
-                              {aberto && !jaPagou && editPrev ? (
+                              {/* Modo edição — só apostas não pagas individualmente */}
+                              {aberto && !ap.pago && editPrev ? (
                                 <div className="flex items-center gap-2">
                                   <input type="number" min="0" max="20" className="placar-input" style={{width:50, fontSize:20}}
                                     value={editPrev.casa}
@@ -584,7 +587,7 @@ export default function GrupoPage() {
                               ) : (
                                 <div className="flex items-center justify-between">
                                   <span className="font-bold text-sm">{ap.golsCasaPrevisto} x {ap.golsVisitantePrevisto}</span>
-                                  {aberto && !jaPagou && (
+                                  {aberto && !ap.pago && (
                                     <div className="flex items-center gap-3">
                                       <button className="text-xs text-white/40 hover:text-white/70 transition-colors"
                                         onClick={() => setPrevisoes(p => ({...p, [editKey]: {casa: String(ap.golsCasaPrevisto), visitante: String(ap.golsVisitantePrevisto)}}))}>
@@ -604,8 +607,8 @@ export default function GrupoPage() {
                       </div>
                     )}
 
-                    {/* Nova aposta (só antes do início e antes de pagar) */}
-                    {aberto && !jaPagou && (
+                    {/* Nova aposta — sempre disponível enquanto jogo não começou */}
+                    {aberto && (
                       <div className="mt-3">
                         <p className="text-xs text-white/40 mb-2">
                           {apostasJogo.length === 0 ? 'Sua aposta:' : `Nova aposta (#${apostasJogo.length + 1}):`}
@@ -635,10 +638,12 @@ export default function GrupoPage() {
                         )}
                       </div>
                     )}
-                    {/* Apostas travadas após pagamento */}
-                    {aberto && jaPagou && apostasJogo.length > 0 && (
-                      <div className="mt-2 text-center py-1">
-                        <p className="text-white/30 text-xs">🔒 Apostas encerradas após pagamento</p>
+                    {/* Aviso de cobrança adicional quando já pagou */}
+                    {aberto && jaPagou && (
+                      <div className="mt-1">
+                        <p className="text-xs" style={{color:'rgba(251,191,36,0.6)'}}>
+                          ⚠️ Nova aposta = R$ {grupo.valorAposta.toLocaleString('pt-BR',{minimumFractionDigits:2})} adicional (pague na aba Pagamento)
+                        </p>
                       </div>
                     )}
 
@@ -794,14 +799,63 @@ export default function GrupoPage() {
               })()}
 
               {jaPagou ? (
-                <div className="text-center py-4">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style={{background:'rgba(74,222,128,0.15)'}}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
+                <div>
+                  <div className="text-center py-4">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style={{background:'rgba(74,222,128,0.15)'}}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                    <p className="font-bold" style={{color:'#4ade80'}}>Pagamento confirmado!</p>
+                    <p className="text-white/40 text-sm mt-1">Você está participando do bolão</p>
                   </div>
-                  <p className="font-bold" style={{color:'#4ade80'}}>Pagamento confirmado!</p>
-                  <p className="text-white/40 text-sm mt-1">Você está participando do bolão</p>
+                  {/* Apostas adicionais não pagas — gera novo PIX */}
+                  {(() => {
+                    const apostasNaoPagas = apostas.filter(a => !a.pago);
+                    if (apostasNaoPagas.length === 0) return null;
+                    const valorAdicional = apostasNaoPagas.length * grupo.valorAposta;
+                    return (
+                      <div className="mt-2 p-4 rounded-xl" style={{background:'rgba(244,168,29,0.08)', border:'1px solid rgba(244,168,29,0.25)'}}>
+                        <p className="font-bold text-sm mb-1" style={{color:'#F4A81D'}}>Apostas adicionais pendentes</p>
+                        <p className="text-white/60 text-xs mb-3">
+                          {apostasNaoPagas.length} aposta{apostasNaoPagas.length > 1 ? 's' : ''} nova{apostasNaoPagas.length > 1 ? 's' : ''} · Total: <strong className="text-white">R$ {valorAdicional.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>
+                        </p>
+                        {pixData ? (
+                          <div className="text-center">
+                            <p className="font-bold mb-3 text-sm" style={{color:'#4ade80'}}>Cobrança gerada! R$ {pixData.valor?.toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
+                            {pixData.pixQrCodeImage && (
+                              <img src={`data:image/png;base64,${pixData.pixQrCodeImage}`} alt="QR Code PIX" className="mx-auto rounded-xl mb-3" style={{width:200,height:200,background:'white',padding:8}}/>
+                            )}
+                            {pixData.pixCopiaECola && (
+                              <button className="btn-verde w-full text-sm" onClick={() => { navigator.clipboard.writeText(pixData!.pixCopiaECola); alert('Código PIX copiado!'); }}>
+                                Copiar Código PIX
+                              </button>
+                            )}
+                            {pixData.invoiceUrl && (
+                              <a href={pixData.invoiceUrl} target="_blank" rel="noopener noreferrer" className="btn-copa block mt-2 text-center text-sm" style={{textDecoration:'none',padding:'10px',borderRadius:8}}>
+                                Abrir fatura
+                              </a>
+                            )}
+                          </div>
+                        ) : (
+                          <form onSubmit={gerarPix} className="space-y-3">
+                            <div>
+                              <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">CPF *</label>
+                              <input type="text" placeholder="000.000.000-00" value={cpf} onChange={e => setCpf(e.target.value)} className="input-copa w-full" maxLength={14} required/>
+                            </div>
+                            <div>
+                              <label className="text-white/60 text-xs block mb-1 uppercase tracking-wide">E-mail (opcional)</label>
+                              <input type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} className="input-copa w-full"/>
+                            </div>
+                            {erroPag && <p className="text-red-400 text-sm bg-red-500/10 rounded p-2 text-center">{erroPag}</p>}
+                            <button type="submit" className="btn-copa w-full" disabled={gerandoPix || !cpf}>
+                              {gerandoPix ? 'Gerando PIX...' : `Pagar R$ ${valorAdicional.toLocaleString('pt-BR',{minimumFractionDigits:2})} via PIX`}
+                            </button>
+                          </form>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : pixData ? (
                 <div className="text-center">
