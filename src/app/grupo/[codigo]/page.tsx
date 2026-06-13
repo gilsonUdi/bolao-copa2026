@@ -812,14 +812,15 @@ export default function GrupoPage() {
                   </div>
                   {/* Apostas adicionais não pagas — gera novo PIX */}
                   {(() => {
-                    const apostasNaoPagas = apostas.filter(a => !a.pago);
-                    if (apostasNaoPagas.length === 0) return null;
-                    const valorAdicional = apostasNaoPagas.length * grupo.valorAposta;
+                    const jaPatias = membroAtual?.apostasPatias ?? membroAtual?.apostasNoPagamento ?? 0;
+                    const qtdAdicionais = Math.max(0, apostas.length - jaPatias);
+                    if (qtdAdicionais === 0) return null;
+                    const valorAdicional = qtdAdicionais * grupo.valorAposta;
                     return (
                       <div className="mt-2 p-4 rounded-xl" style={{background:'rgba(244,168,29,0.08)', border:'1px solid rgba(244,168,29,0.25)'}}>
                         <p className="font-bold text-sm mb-1" style={{color:'#F4A81D'}}>Apostas adicionais pendentes</p>
                         <p className="text-white/60 text-xs mb-3">
-                          {apostasNaoPagas.length} aposta{apostasNaoPagas.length > 1 ? 's' : ''} nova{apostasNaoPagas.length > 1 ? 's' : ''} · Total: <strong className="text-white">R$ {valorAdicional.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>
+                          {qtdAdicionais} aposta{qtdAdicionais > 1 ? 's' : ''} nova{qtdAdicionais > 1 ? 's' : ''} · Total: <strong className="text-white">R$ {valorAdicional.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>
                         </p>
                         {pixData ? (
                           <div className="text-center">

@@ -196,7 +196,7 @@ export async function marcarPago(grupoId: string, usuarioId: string, asaasPaymen
     }
     const atualizado: Record<string, unknown> = {
       ...m,
-      pago,
+      pago: m.pago || pago, // nunca rebaixa de true para false
       asaasPaymentId,
       asaasPaymentLink: link,
       entradaEm: Timestamp.fromDate(m.entradaEm),
