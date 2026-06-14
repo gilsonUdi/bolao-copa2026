@@ -103,12 +103,19 @@ export default function AdminPage() {
       }, 0);
   }
 
+  function percentsParaVencedores(n: number): number[] {
+    if (n === 1) return [1.0];
+    if (n === 2) return [0.667, 0.333];
+    return [0.6, 0.3, 0.1];
+  }
+
   function abrirAuditoria() {
     if (!grupo || ranking.length === 0) return;
     const totalPago = calcularTotalArrecadado() * 0.9;
-    const percents = [0.6, 0.3, 0.1];
-    const top3 = ranking.slice(0, 3);
-    const preview: Vencedor[] = top3.map((r, i) => {
+    // Só quem pontuou — sem prêmio para quem errou tudo
+    const comPontos = ranking.filter(r => r.pontos > 0).slice(0, 3);
+    const percents = percentsParaVencedores(comPontos.length);
+    const preview: Vencedor[] = comPontos.map((r, i) => {
       const membro = grupo.membros.find(m => m.usuarioId === r.usuarioId);
       return {
         posicao: i + 1,
@@ -127,10 +134,10 @@ export default function AdminPage() {
   async function declararVencedores() {
     if (!grupo) return;
     const totalPago = calcularTotalArrecadado() * 0.9;
-    // Distribui: 60% 1º, 30% 2º, 10% 3º
-    const top3 = ranking.slice(0, 3);
-    const percents = [0.6, 0.3, 0.1];
-    const vencedores: Vencedor[] = top3.map((r, i) => {
+    // Só quem pontuou — sem prêmio para quem errou tudo
+    const comPontos = ranking.filter(r => r.pontos > 0).slice(0, 3);
+    const percents = percentsParaVencedores(comPontos.length);
+    const vencedores: Vencedor[] = comPontos.map((r, i) => {
       const membro = grupo.membros.find(m => m.usuarioId === r.usuarioId);
       return {
         posicao: i + 1,
