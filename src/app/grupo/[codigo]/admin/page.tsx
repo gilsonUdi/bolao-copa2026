@@ -103,25 +103,15 @@ export default function AdminPage() {
       }, 0);
   }
 
-  function percentsParaVencedores(vencedores: Ranking[]): number[] {
-    if (vencedores.length === 0) return [];
-    if (vencedores.length === 1) return [1.0];
-    // Empate: divide igualmente
-    const maxPts = vencedores[0].pontos;
-    if (vencedores.every(v => v.pontos === maxPts)) {
-      return vencedores.map(() => 1 / vencedores.length);
-    }
-    // Posições diferentes: 60/30/10
-    return [0.6, 0.3, 0.1].slice(0, vencedores.length);
-  }
-
   function abrirAuditoria() {
     if (!grupo || ranking.length === 0) return;
-    const totalPago = calcularTotalArrecadado() * 0.9;
-    // Só quem pontuou — sem prêmio para quem errou tudo
-    const comPontos = ranking.filter(r => r.pontos > 0).slice(0, 3);
-    const percents = percentsParaVencedores(comPontos);
-    const preview: Vencedor[] = comPontos.map((r, i) => {
+    const premioLiquido = calcularTotalArrecadado() * 0.9;
+    // Todos que acertaram o placar exato dividem o prêmio igualmente
+    const acertadores = ranking.filter(r => r.pontos > 0);
+    const valorCada = acertadores.length > 0
+      ? Math.round(premioLiquido / acertadores.length * 100) / 100
+      : 0;
+    const preview: Vencedor[] = acertadores.map((r, i) => {
       const membro = grupo.membros.find(m => m.usuarioId === r.usuarioId);
       return {
         posicao: i + 1,
@@ -129,7 +119,7 @@ export default function AdminPage() {
         nome: r.nome,
         telefone: membro?.telefone || '',
         pontos: r.pontos,
-        premioValor: Math.round(totalPago * percents[i] * 100) / 100,
+        premioValor: valorCada,
         premioPago: false,
       };
     });
@@ -139,11 +129,13 @@ export default function AdminPage() {
 
   async function declararVencedores() {
     if (!grupo) return;
-    const totalPago = calcularTotalArrecadado() * 0.9;
-    // Só quem pontuou — sem prêmio para quem errou tudo
-    const comPontos = ranking.filter(r => r.pontos > 0).slice(0, 3);
-    const percents = percentsParaVencedores(comPontos);
-    const vencedores: Vencedor[] = comPontos.map((r, i) => {
+    const premioLiquido = calcularTotalArrecadado() * 0.9;
+    // Todos que acertaram o placar exato dividem o prêmio igualmente
+    const acertadores = ranking.filter(r => r.pontos > 0);
+    const valorCada = acertadores.length > 0
+      ? Math.round(premioLiquido / acertadores.length * 100) / 100
+      : 0;
+    const vencedores: Vencedor[] = acertadores.map((r, i) => {
       const membro = grupo.membros.find(m => m.usuarioId === r.usuarioId);
       return {
         posicao: i + 1,
@@ -151,7 +143,7 @@ export default function AdminPage() {
         nome: r.nome,
         telefone: membro?.telefone || '',
         pontos: r.pontos,
-        premioValor: Math.round(totalPago * percents[i] * 100) / 100,
+        premioValor: valorCada,
         premioPago: false,
       };
     });
