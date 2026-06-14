@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buscarGrupo, buscarApostasGrupo, salvarVencedores, marcarVencedorPago } from '@/lib/grupos';
 import { pagarVencedorPix } from '@/lib/asaas';
 import { calcularPontos } from '@/lib/pontuacao';
-import { buscarJogosCopa } from '@/lib/football-api';
+import { buscarJogosComResultados } from '@/lib/football-api';
 import { Vencedor, Ranking } from '@/types';
 
 // GET — calcula e retorna o ranking atual do grupo
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const [grupo, apostas, jogos] = await Promise.all([
     buscarGrupo(grupoId.replace('grupo_', '')),
     buscarApostasGrupo(grupoId),
-    buscarJogosCopa(),
+    buscarJogosComResultados(),
   ]);
   if (!grupo) return NextResponse.json({ error: 'Grupo não encontrado' }, { status: 404 });
 

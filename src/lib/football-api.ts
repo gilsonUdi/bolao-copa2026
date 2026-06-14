@@ -1,5 +1,7 @@
 import { Jogo } from '@/types';
 import { getBandeira } from './paises';
+import { db } from './firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 const BASE_URL = 'https://api.football-data.org/v4';
 const API_KEY = process.env.FOOTBALL_API_KEY;
@@ -224,4 +226,24 @@ function jogosEstaticos(): Jogo[] {
     bandeiraCasa: getBandeira(j.timeCasa),
     bandeiraVisitante: getBandeira(j.timeVisitante),
   }));
+}
+
+// Mescla o calendário com resultados registrados manualmente pelo admin (coleção jogos_resultado)
+export async function buscarJogosComResultados(): Promise<Jogo[]> {
+  const jogos = await buscarJogosCopa();
+  try {
+    const snap = await getDocs(collection(db, 'jogos_resultado'));
+    if (snap.empty) return jogos;
+    const resultados: Record<string, { golsCasa: number; golsVisitante: number; status: Jogo['status'] }> = {};
+    snap.docs.forEach((d) => {
+      resultados[d.id] = d.data() as { golsCasa: number; golsVisitante: number; status: Jogo['status'] };
+    });
+    return jogos.map((j) => {
+      const r = resultados[String(j.id)];
+      if (!r) return j;
+      return { ...j, golsCasa: r.golsCasa, golsVisitante: r.golsVisitante, status: r.status };
+    });
+  } catch {
+    return jogos;
+  }
 }
