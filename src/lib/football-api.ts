@@ -137,7 +137,7 @@ function jogosEstaticos(): Jogo[] {
     // 19/06
     { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'Marrocos', timeVisitante:'Escócia', dataHora:'2026-06-19T16:00:00-03:00', local:'SoFi Stadium, Inglewood', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo D', timeCasa:'EUA', timeVisitante:'Austrália', dataHora:'2026-06-19T16:00:00-03:00', local:'Lumen Field, Seattle', status:'agendado' },
-    { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'Brasil', timeVisitante:'Haiti', dataHora:'2026-06-19T19:00:00-03:00', local:'MetLife Stadium, East Rutherford', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'Brasil', timeVisitante:'Haiti', dataHora:'2026-06-19T21:30:00-03:00', local:'MetLife Stadium, East Rutherford', status:'agendado' },
     // 20/06
     { fase:'Fase de Grupos', grupo:'Grupo D', timeCasa:'Turquia', timeVisitante:'Paraguai', dataHora:'2026-06-20T01:00:00-03:00', local:'Levi\'s Stadium, Santa Clara', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo F', timeCasa:'Holanda', timeVisitante:'Suécia', dataHora:'2026-06-20T14:00:00-03:00', local:'NRG Stadium, Houston', status:'agendado' },
