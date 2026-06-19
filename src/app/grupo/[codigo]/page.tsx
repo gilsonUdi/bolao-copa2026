@@ -738,11 +738,7 @@ export default function GrupoPage() {
                       {m.nome}
                       {m.usuarioId === usuario?.id && <span className="ml-2 text-xs text-white/30">(você)</span>}
                     </p>
-                    {m.pago ? (
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">✓ Pago</span>
-                    ) : (
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">Pendente</span>
-                    )}
+                    <span className="text-xs text-white/40">{apostasDoMembro.length} aposta{apostasDoMembro.length !== 1 ? 's' : ''}</span>
                   </div>
                   {jogosBetados.length === 0 ? (
                     <p className="text-white/30 text-xs italic">Nenhum palpite registrado</p>
@@ -760,10 +756,17 @@ export default function GrupoPage() {
                           </div>
                           <div className="flex flex-col items-end gap-1 ml-3">
                             {aps.map((ap) => (
-                              <span key={ap.id} className="text-sm font-black tabular-nums" style={{color:'#F4A81D'}}>
-                                {ap.golsCasaPrevisto} x {ap.golsVisitantePrevisto}
-                                {aps.length > 1 && <span className="text-xs font-normal text-white/30 ml-1">#{ap.numero}</span>}
-                              </span>
+                              <div key={ap.id} className="flex items-center gap-2">
+                                <span className="text-sm font-black tabular-nums" style={{color:'#F4A81D'}}>
+                                  {ap.golsCasaPrevisto} x {ap.golsVisitantePrevisto}
+                                  {aps.length > 1 && <span className="text-xs font-normal text-white/30 ml-1">#{ap.numero}</span>}
+                                </span>
+                                {ap.pago ? (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400">✓</span>
+                                ) : (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">$</span>
+                                )}
+                              </div>
                             ))}
                           </div>
                         </div>
