@@ -170,7 +170,7 @@ export default function GrupoPage() {
   function jogoEstaAberto(jogo: Jogo): boolean {
     const agora = new Date();
     const inicio = new Date(jogo.dataHora);
-    const fechamento = new Date(inicio.getTime() - 30 * 60 * 1000); // 30 min antes
+    const fechamento = new Date(inicio.getTime() - 15 * 60 * 1000); // 15 min antes
     return agora < fechamento && jogo.status === 'agendado';
   }
 
