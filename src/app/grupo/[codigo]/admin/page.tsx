@@ -573,7 +573,7 @@ export default function AdminPage() {
           <h2 className="font-bold mb-1" style={{color:'#F4A81D'}}>Atualizar Resultados</h2>
           <p className="text-white/40 text-xs mb-4">Informe o placar final dos jogos para calcular a pontuação</p>
 
-          {jogos.filter(j => j.status !== 'encerrado').slice(0, 10).map((jogo) => {
+          {jogos.filter(j => j.status !== 'encerrado' && (grupo?.jogosAtivos || []).includes(j.id)).map((jogo) => {
             const p = placarEdit[jogo.id] || { casa: '', visitante: '' };
             return (
               <div key={jogo.id} className="mb-3 p-3 rounded-lg" style={{background:'rgba(255,255,255,0.04)'}}>
