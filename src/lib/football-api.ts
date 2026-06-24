@@ -169,7 +169,7 @@ function jogosEstaticos(): Jogo[] {
     { fase:'Fase de Grupos', grupo:'Grupo D', timeCasa:'Turquia', timeVisitante:'EUA', dataHora:'2026-06-25T23:00:00-03:00', local:'SoFi Stadium, Inglewood', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo D', timeCasa:'Paraguai', timeVisitante:'Austrália', dataHora:'2026-06-25T23:00:00-03:00', local:'Levi\'s Stadium, Santa Clara', status:'agendado' },
     // 26/06
-    { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'Brasil', timeVisitante:'Escócia', dataHora:'2026-06-26T19:00:00-03:00', local:'NRG Stadium, Houston', status:'agendado' },
+    { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'Brasil', timeVisitante:'Escócia', dataHora:'2026-06-24T19:00:00-03:00', local:'NRG Stadium, Houston', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo C', timeCasa:'Marrocos', timeVisitante:'Haiti', dataHora:'2026-06-26T19:00:00-03:00', local:'Gillette Stadium, Foxborough', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Alemanha', timeVisitante:'Equador', dataHora:'2026-06-26T16:00:00-03:00', local:'AT&T Stadium, Arlington', status:'agendado' },
     { fase:'Fase de Grupos', grupo:'Grupo E', timeCasa:'Curaçao', timeVisitante:'Costa do Marfim', dataHora:'2026-06-26T16:00:00-03:00', local:'Hard Rock Stadium, Miami', status:'agendado' },
