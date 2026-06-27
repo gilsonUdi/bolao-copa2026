@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { salvarAposta, buscarApostasGrupo, buscarApostasUsuario, buscarGrupo, contarApostasJogo, marcarApostaPaga, excluirAposta } from '@/lib/grupos';
-import { criarOuBuscarCliente, criarCobrancaPix } from '@/lib/asaas';
 import { Aposta } from '@/types';
 
 export async function POST(req: NextRequest) {
@@ -46,36 +45,7 @@ export async function POST(req: NextRequest) {
     };
     const id = await salvarAposta(aposta);
 
-    // Gera cobrança Asaas para esta aposta (se CPF fornecido)
-    let cobranca = null;
-    if (cpf && grupo.valorAposta > 0) {
-      try {
-        const cliente = await criarOuBuscarCliente(usuarioNome, cpf.replace(/\D/g, ''));
-        cobranca = await criarCobrancaPix({
-          customerId: cliente.id,
-          valor: grupo.valorAposta,
-          descricao: `Aposta ${numero} - Jogo ${jogoId} - Bolão ${grupo.nome}`,
-          externalReference: `aposta_${id}`,
-        });
-        await marcarApostaPaga(id, cobranca.paymentId, cobranca.invoiceUrl);
-        // Na verdade, marca como pago só após confirmação do webhook
-        // Por ora, deixa pago=false e aguarda webhook
-        await salvarAposta({ ...aposta, asaasPaymentId: cobranca.paymentId, asaasInvoiceUrl: cobranca.invoiceUrl, pago: false });
-      } catch (e) {
-        console.warn('Asaas opcional:', e);
-      }
-    }
-
-    return NextResponse.json({
-      id,
-      numero,
-      cobranca: cobranca ? {
-        invoiceUrl: cobranca.invoiceUrl,
-        pixCopiaECola: cobranca.pixCopiaECola,
-        pixQrCodeImage: cobranca.pixQrCodeImage,
-        valor: cobranca.valor,
-      } : null,
-    });
+    return NextResponse.json({ id, numero });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Erro ao salvar aposta' }, { status: 500 });
