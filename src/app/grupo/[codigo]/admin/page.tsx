@@ -415,7 +415,7 @@ export default function AdminPage() {
           <h2 className="font-bold mb-1" style={{color:'#F4A81D'}}>Liberar Jogos para Apostas</h2>
           <p className="text-white/40 text-xs mb-4">Ative os jogos que os membros poderão apostar. Apenas jogos liberados aparecem para eles.</p>
 
-          {jogos.filter(j => j.status !== 'encerrado').map((jogo) => {
+          {jogos.filter(j => j.status !== 'encerrado' && new Date(j.dataHora) > new Date()).map((jogo) => {
             const ativo = (grupo.jogosAtivos || []).includes(jogo.id);
             const aConfirmar = jogo.timeCasa === 'A confirmar' || jogo.timeVisitante === 'A confirmar';
             const editando = jogoEdit[jogo.id];
