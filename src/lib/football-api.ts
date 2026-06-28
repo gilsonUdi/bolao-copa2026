@@ -228,20 +228,27 @@ function jogosEstaticos(): Jogo[] {
   }));
 }
 
-// Mescla o calendário com resultados registrados manualmente pelo admin (coleção jogos_resultado)
+// Mescla o calendário com resultados e edições do admin (coleção jogos_resultado)
 export async function buscarJogosComResultados(): Promise<Jogo[]> {
   const jogos = await buscarJogosCopa();
   try {
     const snap = await getDocs(collection(db, 'jogos_resultado'));
     if (snap.empty) return jogos;
-    const resultados: Record<string, { golsCasa: number; golsVisitante: number; status: Jogo['status'] }> = {};
-    snap.docs.forEach((d) => {
-      resultados[d.id] = d.data() as { golsCasa: number; golsVisitante: number; status: Jogo['status'] };
-    });
+    const overrides: Record<string, Record<string, unknown>> = {};
+    snap.docs.forEach((d) => { overrides[d.id] = d.data(); });
     return jogos.map((j) => {
-      const r = resultados[String(j.id)];
+      const r = overrides[String(j.id)];
       if (!r) return j;
-      return { ...j, golsCasa: r.golsCasa, golsVisitante: r.golsVisitante, status: r.status };
+      const merged = { ...j };
+      if (r.golsCasa !== undefined) merged.golsCasa = r.golsCasa as number;
+      if (r.golsVisitante !== undefined) merged.golsVisitante = r.golsVisitante as number;
+      if (r.status) merged.status = r.status as Jogo['status'];
+      if (r.timeCasa) merged.timeCasa = r.timeCasa as string;
+      if (r.timeVisitante) merged.timeVisitante = r.timeVisitante as string;
+      if (r.dataHora) merged.dataHora = r.dataHora as string;
+      if (merged.timeCasa !== j.timeCasa) merged.bandeiraCasa = getBandeira(merged.timeCasa);
+      if (merged.timeVisitante !== j.timeVisitante) merged.bandeiraVisitante = getBandeira(merged.timeVisitante);
+      return merged;
     });
   } catch {
     return jogos;

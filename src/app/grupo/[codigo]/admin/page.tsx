@@ -27,6 +27,8 @@ export default function AdminPage() {
   const [modoAuditoria, setModoAuditoria] = useState(false);
   const [vencedoresPreview, setVencedoresPreview] = useState<Vencedor[]>([]);
   const [abaAdmin, setAbaAdmin] = useState<'compartilhar'|'jogos'|'vencedores'|'financeiro'>('compartilhar');
+  const [jogoEdit, setJogoEdit] = useState<Record<number, { timeCasa: string; timeVisitante: string; dataHora: string }>>({});
+  const [salvandoJogoEdit, setSalvandoJogoEdit] = useState<number | null>(null);
 
   // Autenticação do admin
   const [autenticado, setAutenticado] = useState(false);
@@ -191,6 +193,23 @@ export default function AdminPage() {
       `_Código do grupo: *${codigo}*_`
     );
     window.open(`https://wa.me/?text=${msg}`, '_blank');
+  }
+
+  async function salvarEdicaoJogo(jogo: Jogo) {
+    const e = jogoEdit[jogo.id];
+    if (!e || !e.timeCasa || !e.timeVisitante) return;
+    setSalvandoJogoEdit(jogo.id);
+    try {
+      await fetch(`/api/jogos/${jogo.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timeCasa: e.timeCasa, timeVisitante: e.timeVisitante, dataHora: e.dataHora || jogo.dataHora }),
+      });
+      setJogoEdit(prev => { const n = {...prev}; delete n[jogo.id]; return n; });
+      await carregarDados();
+    } finally {
+      setSalvandoJogoEdit(null);
+    }
   }
 
   async function atualizarPlacar(jogo: Jogo) {
@@ -398,23 +417,58 @@ export default function AdminPage() {
 
           {jogos.filter(j => j.status !== 'encerrado').map((jogo) => {
             const ativo = (grupo.jogosAtivos || []).includes(jogo.id);
+            const aConfirmar = jogo.timeCasa === 'A confirmar' || jogo.timeVisitante === 'A confirmar';
+            const editando = jogoEdit[jogo.id];
             return (
-              <div key={jogo.id} className="flex items-center justify-between py-3 gap-3" style={{borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{jogo.timeCasa} x {jogo.timeVisitante}</p>
-                  <p className="text-xs text-white/30">{jogo.grupo} · {new Date(jogo.dataHora).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', timeZone:'America/Sao_Paulo'})}</p>
+              <div key={jogo.id} className="py-3" style={{borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{jogo.timeCasa} x {jogo.timeVisitante}</p>
+                    <p className="text-xs text-white/30">{jogo.grupo || jogo.fase} · {new Date(jogo.dataHora).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', timeZone:'America/Sao_Paulo'})}</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {aConfirmar && !editando && (
+                      <button onClick={() => setJogoEdit(prev => ({...prev, [jogo.id]: { timeCasa: jogo.timeCasa === 'A confirmar' ? '' : jogo.timeCasa, timeVisitante: jogo.timeVisitante === 'A confirmar' ? '' : jogo.timeVisitante, dataHora: jogo.dataHora }}))}
+                        className="px-3 py-2 rounded-lg text-xs font-bold" style={{background:'rgba(244,168,29,0.15)', color:'#F4A81D', border:'1px solid rgba(244,168,29,0.3)'}}>
+                        Editar
+                      </button>
+                    )}
+                    <button
+                      disabled={togglingJogo === jogo.id || aConfirmar}
+                      onClick={() => toggleJogo(jogo.id, !ativo)}
+                      className="px-4 py-2 rounded-lg font-bold text-sm transition-all"
+                      style={aConfirmar
+                        ? {background:'rgba(255,255,255,0.03)', color:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.05)', cursor:'not-allowed'}
+                        : ativo
+                          ? {background:'rgba(74,222,128,0.2)', color:'#4ade80', border:'1px solid rgba(74,222,128,0.4)'}
+                          : {background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.4)', border:'1px solid rgba(255,255,255,0.1)'}
+                      }
+                    >
+                      {togglingJogo === jogo.id ? '...' : ativo ? 'Liberado' : 'Liberar'}
+                    </button>
+                  </div>
                 </div>
-                <button
-                  disabled={togglingJogo === jogo.id}
-                  onClick={() => toggleJogo(jogo.id, !ativo)}
-                  className="flex-shrink-0 px-4 py-2 rounded-lg font-bold text-sm transition-all"
-                  style={ativo
-                    ? {background:'rgba(74,222,128,0.2)', color:'#4ade80', border:'1px solid rgba(74,222,128,0.4)'}
-                    : {background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.4)', border:'1px solid rgba(255,255,255,0.1)'}
-                  }
-                >
-                  {togglingJogo === jogo.id ? 'Atualizando...' : ativo ? 'Liberado' : 'Liberar'}
-                </button>
+                {/* Formulário de edição de times */}
+                {editando && (
+                  <div className="mt-2 p-3 rounded-lg space-y-2" style={{background:'rgba(244,168,29,0.06)', border:'1px solid rgba(244,168,29,0.15)'}}>
+                    <div className="flex gap-2">
+                      <input className="input-copa flex-1 text-sm" placeholder="Time casa" value={editando.timeCasa}
+                        onChange={e => setJogoEdit(prev => ({...prev, [jogo.id]: {...editando, timeCasa: e.target.value}}))} />
+                      <span className="text-white/30 self-center">x</span>
+                      <input className="input-copa flex-1 text-sm" placeholder="Time visitante" value={editando.timeVisitante}
+                        onChange={e => setJogoEdit(prev => ({...prev, [jogo.id]: {...editando, timeVisitante: e.target.value}}))} />
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="datetime-local" className="input-copa flex-1 text-sm" value={editando.dataHora.slice(0,16)}
+                        onChange={e => setJogoEdit(prev => ({...prev, [jogo.id]: {...editando, dataHora: e.target.value + ':00-03:00'}}))} />
+                      <button className="btn-copa px-4 py-2 text-sm" disabled={salvandoJogoEdit === jogo.id || !editando.timeCasa || !editando.timeVisitante}
+                        onClick={() => salvarEdicaoJogo(jogo)}>
+                        {salvandoJogoEdit === jogo.id ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button className="text-white/30 text-sm px-2" onClick={() => setJogoEdit(prev => { const n={...prev}; delete n[jogo.id]; return n; })}>×</button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

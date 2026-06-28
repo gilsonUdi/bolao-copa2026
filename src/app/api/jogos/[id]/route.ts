@@ -10,10 +10,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     const { id } = await params;
     const body = await req.json();
-    const { golsCasa, golsVisitante, status } = body;
+    const { golsCasa, golsVisitante, status, timeCasa, timeVisitante, dataHora } = body;
+
+    const update: Record<string, unknown> = { atualizadoEm: new Date() };
+    if (golsCasa !== undefined) update.golsCasa = golsCasa;
+    if (golsVisitante !== undefined) update.golsVisitante = golsVisitante;
+    if (status) update.status = status;
+    if (timeCasa) update.timeCasa = timeCasa;
+    if (timeVisitante) update.timeVisitante = timeVisitante;
+    if (dataHora) update.dataHora = dataHora;
 
     const jogoRef = doc(db, 'jogos_resultado', id);
-    await setDoc(jogoRef, { golsCasa, golsVisitante, status, atualizadoEm: new Date() }, { merge: true });
+    await setDoc(jogoRef, update, { merge: true });
 
     // Recalcula pontos de todas as apostas deste jogo
     const apostasSnap = await buscarTodasApostasJogo(Number(id));
