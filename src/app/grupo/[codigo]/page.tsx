@@ -729,6 +729,10 @@ export default function GrupoPage() {
               const apostasDoMembro = m.usuarioId === usuario?.id
                 ? apostas
                 : todasApostas.filter((a) => a.usuarioId === m.usuarioId);
+              // Determina quantas apostas estão pagas pelo membro (não depende de ap.pago individual)
+              const totalPagasMembro = m.apostasPatias ?? m.apostasNoPagamento ?? (m.pago ? apostasDoMembro.length : 0);
+              const apostasOrdenadas = [...apostasDoMembro].sort((a, b) => new Date(a.criadaEm).getTime() - new Date(b.criadaEm).getTime());
+              const idsPagas = new Set(apostasOrdenadas.slice(0, totalPagasMembro).map(a => a.id));
               // Usa todos os jogos — não só os liberados — para não perder apostas de jogos removidos
               const jogosBetados = jogos
                 .map((jogo) => ({ jogo, aps: apostasDoMembro.filter((a) => a.jogoId === jogo.id) }))
@@ -764,7 +768,7 @@ export default function GrupoPage() {
                                   {ap.golsCasaPrevisto} x {ap.golsVisitantePrevisto}
                                   {aps.length > 1 && <span className="text-xs font-normal text-white/30 ml-1">#{ap.numero}</span>}
                                 </span>
-                                {ap.pago ? (
+                                {(ap.pago || idsPagas.has(ap.id)) ? (
                                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400">✓</span>
                                 ) : (
                                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">$</span>
