@@ -492,7 +492,7 @@ export default function AdminPage() {
               {/* Ranking atual */}
               <div className="mb-4">
                 <h3 className="text-xs font-bold text-white/40 uppercase tracking-wide mb-2">Ranking atual</h3>
-                {ranking.slice(0,5).map((r) => (
+                {ranking.filter(r => r.pontos > 0).map((r) => (
                   <div key={r.usuarioId} className="flex items-center justify-between py-2" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
                     <div className="flex items-center gap-2">
                       <span className="w-6 text-center font-black text-sm" style={{color: r.posicao===1?'#F4A81D':r.posicao===2?'#C0C0C0':r.posicao===3?'#CD7F32':'rgba(255,255,255,0.4)'}}>
