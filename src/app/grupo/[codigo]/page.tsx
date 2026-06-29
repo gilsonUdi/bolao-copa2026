@@ -239,7 +239,7 @@ export default function GrupoPage() {
     if (!grupo) return [];
     const pontosMap: Record<string, { pontos: number; exatos: number; vencedores: number; total: number; nome: string }> = {};
 
-    grupo.membros.forEach((m) => {
+    grupo.membros.filter((m) => m.pago).forEach((m) => {
       pontosMap[m.usuarioId] = { pontos: 0, exatos: 0, vencedores: 0, total: 0, nome: m.nome };
     });
 
@@ -247,7 +247,7 @@ export default function GrupoPage() {
       const jogo = jogos.find((j) => j.id === a.jogoId);
       if (!jogo || jogo.status !== 'encerrado') return;
       const pts = calcularPontos(a, jogo);
-      if (!pontosMap[a.usuarioId]) pontosMap[a.usuarioId] = { pontos: 0, exatos: 0, vencedores: 0, total: 0, nome: a.usuarioNome };
+      if (!pontosMap[a.usuarioId]) return;
       pontosMap[a.usuarioId].pontos += pts;
       pontosMap[a.usuarioId].total += 1;
       if (pts === 10) pontosMap[a.usuarioId].exatos += 1;
