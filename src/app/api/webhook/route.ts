@@ -2,25 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
 
-// Webhook do Asaas — chamado quando um pagamento é confirmado
+// Webhook da OpenPix — chamado quando um pagamento PIX é confirmado
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    if (!['PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED'].includes(body.event)) {
+    // OpenPix envia OPENPIX:CHARGE_COMPLETED quando pago
+    if (body.event !== 'OPENPIX:CHARGE_COMPLETED') {
       return NextResponse.json({ ok: true });
     }
 
-    const payment = body.payment;
-    if (!payment?.externalReference) return NextResponse.json({ ok: true });
+    const charge = body.charge;
+    if (!charge?.correlationID) return NextResponse.json({ ok: true });
 
-    // externalReference = "grupo_CODIGO_user_TELEFONE"
-    const ref: string = payment.externalReference;
+    // correlationID = "grupo_CODIGO_user_TELEFONE_TIMESTAMP"
+    const ref: string = charge.correlationID;
     const userIdx = ref.indexOf('_user_');
     if (userIdx === -1) return NextResponse.json({ ok: true });
 
     const grupoId = ref.substring(0, userIdx);
-    const usuarioId = ref.substring(userIdx + 1); // inclui "user_"
+    // Extrai usuarioId: remove o timestamp final (último _DIGITOS)
+    const restante = ref.substring(userIdx + 1); // "user_TELEFONE_TIMESTAMP"
+    const lastUnderscore = restante.lastIndexOf('_');
+    const usuarioId = lastUnderscore > 4 ? restante.substring(0, lastUnderscore) : restante;
 
     if (!grupoId || !usuarioId) return NextResponse.json({ ok: true });
 
@@ -29,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (grupoSnap.exists()) {
       const grupo = grupoSnap.data();
       const membros = grupo.membros.map((m: { usuarioId: string; pago: boolean }) =>
-        m.usuarioId === usuarioId ? { ...m, pago: true, asaasPaymentId: payment.id } : m
+        m.usuarioId === usuarioId ? { ...m, pago: true, asaasPaymentId: charge.correlationID } : m
       );
       await updateDoc(grupoSnap.ref, { membros });
     }
@@ -45,7 +49,7 @@ export async function POST(req: NextRequest) {
     );
     await Promise.all(
       apostasSnap.docs.map((d) =>
-        updateDoc(d.ref, { pago: true, asaasPaymentId: payment.id })
+        updateDoc(d.ref, { pago: true, asaasPaymentId: charge.correlationID })
       )
     );
 

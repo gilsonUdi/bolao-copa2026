@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { criarOuBuscarCliente, criarCobrancaPix, consultarPagamento } from '@/lib/asaas';
+import { criarCobrancaPix, consultarPagamento } from '@/lib/openpix';
 import { buscarGrupo, marcarPago, buscarApostasUsuario } from '@/lib/grupos';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { grupoId, usuarioId, nome, cpf, email } = body;
+    const { grupoId, usuarioId, nome, cpf } = body;
 
     if (!grupoId || !usuarioId || !nome || !cpf) {
       return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 });
@@ -29,22 +29,20 @@ export async function POST(req: NextRequest) {
     }
 
     const valorTotal = totalApostas * grupo.valorAposta;
-
-    const cliente = await criarOuBuscarCliente(nome, cpf.replace(/\D/g, ''), email);
-
     const qtdLabel = totalApostas > 1 ? `${totalApostas} apostas` : `1 aposta`;
     const descricao = `Bolão Copa 2026 - ${grupo.nome} (${qtdLabel})`;
+    const correlationID = `${grupoId}_${usuarioId}_${Date.now()}`;
+
     const cobranca = await criarCobrancaPix({
-      customerId: cliente.id,
       valor: valorTotal,
       descricao,
-      externalReference: `${grupoId}_${usuarioId}`,
+      correlationID,
     });
 
-    await marcarPago(grupoId, usuarioId, cobranca.paymentId, cobranca.invoiceUrl, false, apostasUsuario.length);
+    await marcarPago(grupoId, usuarioId, correlationID, cobranca.invoiceUrl, false, apostasUsuario.length);
 
     return NextResponse.json({
-      paymentId: cobranca.paymentId,
+      paymentId: correlationID,
       invoiceUrl: cobranca.invoiceUrl,
       pixCopiaECola: cobranca.pixCopiaECola,
       pixQrCodeImage: cobranca.pixQrCodeImage,
@@ -61,8 +59,5 @@ export async function GET(req: NextRequest) {
   if (!paymentId) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 });
 
   const pagamento = await consultarPagamento(paymentId);
-  return NextResponse.json({
-    status: pagamento.status,
-    pago: pagamento.status === 'RECEIVED' || pagamento.status === 'CONFIRMED',
-  });
+  return NextResponse.json(pagamento);
 }
