@@ -100,7 +100,7 @@ export default function AdminPage() {
     return grupo.membros
       .filter(m => m.pago)
       .reduce((acc, m) => {
-        const qtdPagas = m.apostasPatias ?? m.apostasNoPagamento ?? todasApostas.filter(a => a.usuarioId === m.usuarioId).length;
+        const qtdPagas = m.apostasPatias ?? m.apostasNoPagamento ?? todasApostas.filter(a => a.usuarioId === m.usuarioId && a.pago).length;
         return acc + (qtdPagas > 0 ? qtdPagas : 1) * grupo.valorAposta;
       }, 0);
   }
