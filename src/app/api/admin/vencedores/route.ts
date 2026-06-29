@@ -41,8 +41,8 @@ export async function GET(req: NextRequest) {
   const totalPago = grupo.membros
     .filter((m) => m.pago)
     .reduce((acc, m) => {
-      const qtd = apostas.filter((a) => a.usuarioId === m.usuarioId).length;
-      return acc + (qtd > 0 ? qtd : 1) * grupo.valorAposta;
+      const qtdPagas = m.apostasPatias ?? m.apostasNoPagamento ?? apostas.filter((a) => a.usuarioId === m.usuarioId).length;
+      return acc + (qtdPagas > 0 ? qtdPagas : 1) * grupo.valorAposta;
     }, 0);
   const premioTotal = totalPago * 0.9;
 
