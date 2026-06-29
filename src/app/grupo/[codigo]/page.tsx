@@ -721,6 +721,9 @@ export default function GrupoPage() {
         {/* Tab Palpites */}
         {tab === 'palpites' && (
           <div>
+            <div className="p-3 rounded-lg mb-4 text-xs" style={{background:'rgba(244,168,29,0.08)', border:'1px solid rgba(244,168,29,0.2)', color:'rgba(255,255,255,0.6)'}}>
+              <strong style={{color:'#F4A81D'}}>Importante:</strong> O resultado considerado no bolão será o placar ao final do segundo tempo (90 minutos + acréscimos). Prorrogação e pênaltis não serão considerados.
+            </div>
             {grupo.membros.map((m) => {
               // Para o usuário atual usa apostas (fetch garantido); demais usam todasApostas
               const apostasDoMembro = m.usuarioId === usuario?.id
