@@ -680,11 +680,7 @@ export default function GrupoPage() {
             <div className="card-copa p-4 mb-4 flex justify-between text-center">
               <div>
                 <p className="text-white/40 text-xs">Participantes</p>
-                <p className="font-black text-2xl">{grupo.membros.length}</p>
-              </div>
-              <div>
-                <p className="text-white/40 text-xs">Pagos</p>
-                <p className="font-black text-2xl" style={{color:'#4ade80'}}>{grupo.membros.filter(m=>m.pago).length}</p>
+                <p className="font-black text-2xl">{grupo.membros.filter(m=>m.pago).length}</p>
               </div>
               <div>
                 <p className="text-white/40 text-xs">Prêmio</p>
