@@ -913,6 +913,11 @@ export default function GrupoPage() {
                     </a>
                   )}
                 </div>
+              ) : apostas.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-white/50 text-sm">Você ainda não fez nenhuma aposta.</p>
+                  <p className="text-white/30 text-xs mt-1">Vá até a aba <strong className="text-white/50">Apostas</strong> e registre seu palpite antes de pagar.</p>
+                </div>
               ) : (
                 <form onSubmit={gerarPix} className="flex flex-col gap-4">
                   <div>

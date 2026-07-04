@@ -25,7 +25,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Nenhuma aposta pendente de pagamento' }, { status: 400 });
       }
     } else {
-      totalApostas = apostasUsuario.length > 0 ? apostasUsuario.length : 1;
+      if (apostasUsuario.length === 0) {
+        return NextResponse.json({ error: 'Faça pelo menos uma aposta antes de pagar' }, { status: 400 });
+      }
+      totalApostas = apostasUsuario.length;
     }
 
     const valorTotal = totalApostas * grupo.valorAposta;
