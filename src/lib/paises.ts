@@ -17,13 +17,18 @@ export const PAISES: Record<string, string> = {
   // Grupo H
   'Portugal': 'pt', 'Dinamarca': 'dk', 'Nigeria': 'ng', 'Venezuela': 've',
   // Grupo I
-  'Holanda': 'nl', 'Senegal': 'sn', 'Austrália': 'au', 'RD Congo': 'cd',
+  'Noruega': 'no', 'Senegal': 'sn', 'Iraque': 'iq',
+  'Holanda': 'nl', 'Austrália': 'au', 'RD Congo': 'cd',
   // Grupo J
+  'Áustria': 'at', 'Jordânia': 'jo',
   'Inglaterra': 'gb-eng', 'Costa Rica': 'cr', 'Iran': 'ir', 'Eslovênia': 'si',
   // Grupo K
   'Marrocos': 'ma', 'Gana': 'gh', 'Austria': 'at', 'Zambia': 'zm',
   // Grupo L
   'Bélgica': 'be', 'Croácia': 'hr', 'Kenya': 'ke',
+  // Fase eliminatória / outros
+  'Escócia': 'gb-sct', 'Haiti': 'ht', 'Suécia': 'se',
+  'Turquia': 'tr', 'Ucrânia': 'ua', 'Sérvia': 'rs', 'Islândia': 'is',
 };
 
 export function getBandeira(pais: string): string {
@@ -42,8 +47,12 @@ export const EMOJI_BANDEIRAS: Record<string, string> = {
   'Espanha': '🇪🇸', 'Coreia do Sul': '🇰🇷', 'Romênia': '🇷🇴', 'Burkina Faso': '🇧🇫',
   'Alemanha': '🇩🇪', 'Colômbia': '🇨🇴', 'Argélia': '🇩🇿', 'Qatar': '🇶🇦',
   'Portugal': '🇵🇹', 'Dinamarca': '🇩🇰', 'Nigeria': '🇳🇬', 'Venezuela': '🇻🇪',
-  'Holanda': '🇳🇱', 'Senegal': '🇸🇳', 'Austrália': '🇦🇺', 'RD Congo': '🇨🇩',
+  'Noruega': '🇳🇴', 'Senegal': '🇸🇳', 'Iraque': '🇮🇶',
+  'Holanda': '🇳🇱', 'Austrália': '🇦🇺', 'RD Congo': '🇨🇩',
+  'Áustria': '🇦🇹', 'Jordânia': '🇯🇴',
   'Inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Costa Rica': '🇨🇷', 'Iran': '🇮🇷', 'Eslovênia': '🇸🇮',
   'Marrocos': '🇲🇦', 'Gana': '🇬🇭', 'Austria': '🇦🇹', 'Zambia': '🇿🇲',
   'Bélgica': '🇧🇪', 'Croácia': '🇭🇷', 'Kenya': '🇰🇪',
+  'Escócia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'Haiti': '🇭🇹', 'Suécia': '🇸🇪',
+  'Turquia': '🇹🇷', 'Ucrânia': '🇺🇦', 'Sérvia': '🇷🇸', 'Islândia': '🇮🇸',
 };
