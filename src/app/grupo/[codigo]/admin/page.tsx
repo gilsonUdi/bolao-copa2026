@@ -199,11 +199,12 @@ export default function AdminPage() {
     const e = jogoEdit[jogo.id];
     if (!e || !e.timeCasa || !e.timeVisitante) return;
     setSalvandoJogoEdit(jogo.id);
+    const senhaAdmin = sessionStorage.getItem(SESSION_KEY + '_senha') || '';
     try {
       await fetch(`/api/jogos/${jogo.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ timeCasa: e.timeCasa, timeVisitante: e.timeVisitante, dataHora: e.dataHora || jogo.dataHora }),
+        body: JSON.stringify({ timeCasa: e.timeCasa, timeVisitante: e.timeVisitante, dataHora: e.dataHora || jogo.dataHora, grupoId: `grupo_${codigo}`, senhaAdmin }),
       });
       setJogoEdit(prev => { const n = {...prev}; delete n[jogo.id]; return n; });
       await carregarDados();
@@ -216,11 +217,12 @@ export default function AdminPage() {
     const p = placarEdit[jogo.id];
     if (!p || p.casa === '' || p.visitante === '') return;
     setAtualizandoJogo(jogo.id);
+    const senhaAdmin = sessionStorage.getItem(SESSION_KEY + '_senha') || '';
     try {
       await fetch(`/api/jogos/${jogo.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ golsCasa: Number(p.casa), golsVisitante: Number(p.visitante), status: 'encerrado' }),
+        body: JSON.stringify({ golsCasa: Number(p.casa), golsVisitante: Number(p.visitante), status: 'encerrado', grupoId: `grupo_${codigo}`, senhaAdmin }),
       });
       await carregarDados();
     } finally {
@@ -241,6 +243,7 @@ export default function AdminPage() {
       const data = await res.json();
       if (data.ok) {
         sessionStorage.setItem(SESSION_KEY, 'true');
+        sessionStorage.setItem(SESSION_KEY + '_senha', senhaInput);
         setAutenticado(true);
       } else {
         setSenhaErro('Senha incorreta. Tente novamente.');

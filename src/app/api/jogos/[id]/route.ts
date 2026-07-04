@@ -10,7 +10,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     const { id } = await params;
     const body = await req.json();
-    const { golsCasa, golsVisitante, status, timeCasa, timeVisitante, dataHora } = body;
+    const { golsCasa, golsVisitante, status, timeCasa, timeVisitante, dataHora, grupoId, senhaAdmin } = body;
+
+    // Valida que a requisição vem de um admin autenticado
+    if (!grupoId || !senhaAdmin) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+    const grupoSnap = await getDoc(doc(db, 'grupos', grupoId));
+    if (!grupoSnap.exists() || grupoSnap.data().senhaAdmin !== senhaAdmin) {
+      return NextResponse.json({ error: 'Senha incorreta' }, { status: 403 });
+    }
 
     const update: Record<string, unknown> = { atualizadoEm: new Date() };
     if (golsCasa !== undefined) update.golsCasa = golsCasa;
