@@ -47,6 +47,8 @@ export async function GET(req: NextRequest) {
         nome: m.nome,
         pago: m.pago,
         entradaEm: m.entradaEm,
+        apostasNoPagamento: m.apostasNoPagamento,
+        apostasPatias: m.apostasPatias,
       })),
     };
 
