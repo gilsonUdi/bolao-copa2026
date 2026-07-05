@@ -14,6 +14,10 @@ export async function POST(req: NextRequest) {
     const grupo = await buscarGrupo(grupoId.replace('grupo_', ''));
     if (!grupo) return NextResponse.json({ error: 'Grupo não encontrado' }, { status: 404 });
 
+    if (grupo.pagamentoBloqueado) {
+      return NextResponse.json({ error: 'Pagamentos encerrados para este grupo' }, { status: 403 });
+    }
+
     const membro = grupo.membros.find((m) => m.usuarioId === usuarioId);
     const apostasUsuario = await buscarApostasUsuario(grupoId, usuarioId);
 

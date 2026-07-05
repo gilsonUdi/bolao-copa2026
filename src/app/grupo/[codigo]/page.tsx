@@ -796,7 +796,13 @@ export default function GrupoPage() {
                 </div>
               </div>
               <h2 className="font-bold text-lg mb-1" style={{color:'#F4A81D'}}>Confirmação de Participação</h2>
-              {(() => {
+              {grupo.pagamentoBloqueado ? (
+                <div className="text-center py-6">
+                  <p className="text-2xl mb-2">🔒</p>
+                  <p className="font-bold text-white">Pagamentos encerrados</p>
+                  <p className="text-white/40 text-sm mt-1">O administrador encerrou os pagamentos deste bolão.</p>
+                </div>
+              ) : (() => {
                 const minhasApostas = apostas.length;
                 const valorTotal = minhasApostas > 0 ? minhasApostas * grupo.valorAposta : grupo.valorAposta;
                 return (
@@ -820,8 +826,8 @@ export default function GrupoPage() {
                     <p className="font-bold" style={{color:'#4ade80'}}>Pagamento confirmado!</p>
                     <p className="text-white/40 text-sm mt-1">Você está participando do bolão</p>
                   </div>
-                  {/* Apostas adicionais não pagas — gera novo PIX */}
-                  {(() => {
+                  {/* Apostas adicionais não pagas — gera novo PIX (só se pagamento não bloqueado) */}
+                  {!grupo.pagamentoBloqueado && (() => {
                     const jaPatias = membroAtual?.apostasPatias ?? membroAtual?.apostasNoPagamento ?? 0;
                     const qtdAdicionais = Math.max(0, apostas.length - jaPatias);
                     if (qtdAdicionais === 0) return null;
@@ -913,7 +919,7 @@ export default function GrupoPage() {
                     </a>
                   )}
                 </div>
-              ) : apostas.length === 0 ? (
+              ) : grupo.pagamentoBloqueado ? null : apostas.length === 0 ? (
                 <div className="text-center py-4">
                   <p className="text-white/50 text-sm">Você ainda não fez nenhuma aposta.</p>
                   <p className="text-white/30 text-xs mt-1">Vá até a aba <strong className="text-white/50">Apostas</strong> e registre seu palpite antes de pagar.</p>

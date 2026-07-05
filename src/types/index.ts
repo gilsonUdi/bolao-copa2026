@@ -18,6 +18,7 @@ export interface Grupo {
   vencedores: Vencedor[];
   senhaAdmin: string; // hash da senha do admin
   status: 'aberto' | 'fechado' | 'encerrado';
+  pagamentoBloqueado?: boolean;
   criadoEm: Date;
 }
 
