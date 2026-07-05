@@ -33,12 +33,25 @@ export async function criarCobrancaPix(params: CriarCobrancaParams) {
   });
 
   const charge = data.charge || {};
+  const brCode = charge.brCode || '';
+
+  // Normaliza a imagem do QR code:
+  // - se vier base64 puro, envolve no data URL
+  // - se vier vazio, gera via serviço público a partir do brCode
+  let pixQrCodeImage = '';
+  if (charge.qrCodeImage) {
+    pixQrCodeImage = charge.qrCodeImage.startsWith('data:') || charge.qrCodeImage.startsWith('http')
+      ? charge.qrCodeImage
+      : `data:image/png;base64,${charge.qrCodeImage}`;
+  } else if (brCode) {
+    pixQrCodeImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(brCode)}`;
+  }
 
   return {
     paymentId: charge.correlationID || params.correlationID,
     invoiceUrl: charge.paymentLinkUrl || '',
-    pixCopiaECola: charge.brCode || '',
-    pixQrCodeImage: charge.qrCodeImage || '',
+    pixCopiaECola: brCode,
+    pixQrCodeImage,
     status: charge.status,
     valor: params.valor,
   };

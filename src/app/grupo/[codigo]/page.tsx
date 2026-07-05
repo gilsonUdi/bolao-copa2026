@@ -836,7 +836,7 @@ export default function GrupoPage() {
                           <div className="text-center">
                             <p className="font-bold mb-3 text-sm" style={{color:'#4ade80'}}>Cobrança gerada! R$ {pixData.valor?.toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
                             {pixData.pixQrCodeImage && (
-                              <img src={`data:image/png;base64,${pixData.pixQrCodeImage}`} alt="QR Code PIX" className="mx-auto rounded-xl mb-3" style={{width:200,height:200,background:'white',padding:8}}/>
+                              <img src={pixData.pixQrCodeImage} alt="QR Code PIX" className="mx-auto rounded-xl mb-3" style={{width:200,height:200,background:'white',padding:8}}/>
                             )}
                             {pixData.pixCopiaECola && (
                               <button className="btn-verde w-full text-sm" onClick={() => { navigator.clipboard.writeText(pixData!.pixCopiaECola); alert('Código PIX copiado!'); }}>
@@ -881,7 +881,7 @@ export default function GrupoPage() {
                     <div className="mb-4">
                       <p className="text-white/50 text-xs mb-2">Escaneie com o app do banco:</p>
                       <img
-                        src={`data:image/png;base64,${pixData.pixQrCodeImage}`}
+                        src={pixData.pixQrCodeImage}
                         alt="QR Code PIX"
                         className="mx-auto rounded-xl"
                         style={{width:220, height:220, background:'white', padding:8}}
